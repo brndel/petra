@@ -1,0 +1,13 @@
+[package]
+name = "petra"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+web_server = "0.4.2"
+base64 = "0.21.0"
+serde = { version = "1.0.159", features = ["derive"] }
+data = { path = "data" }
+data_derive = { path = "data_derive" }
