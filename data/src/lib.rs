@@ -1,21 +1,21 @@
-mod column;
-mod data_type;
 mod database;
-mod modifier;
 pub mod query;
 mod table;
 mod filter;
 
-pub use column::Column;
-pub use data_type::AsDataType;
-pub use data_type::DataType;
+pub use table::DataType;
+pub use table::AsDataType;
 pub use database::Database;
-pub use modifier::Modifier;
-pub use modifier::ForeignReference;
-pub use modifier::ForeignRule;
+pub use table::modifier::Modifier;
+pub use table::modifier::ForeignReference;
+pub use table::modifier::ForeignRule;
 pub use table::Table;
+pub use table::Readable;
 pub use table::Insertable;
+pub use table::Column;
 pub use table::Link;
 pub use filter::Filter;
 
 pub use sqlite;
+pub use data_derive::Table;
+pub use table::PrimKey;

@@ -19,7 +19,7 @@ impl<T: Table> DeleteQuery<T> {
     let q = format!(
       "DELETE FROM {} WHERE {} = :id",
       T::table_name(),
-      T::primary_name()
+      T::primary_column().name
     );
 
     let mut statement = database.prepare(q)?;

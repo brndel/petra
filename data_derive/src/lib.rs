@@ -1,6 +1,5 @@
-mod column;
-mod modifier;
 mod table;
+mod quotes;
 
 extern crate proc_macro;
 extern crate syn;
@@ -8,7 +7,7 @@ extern crate syn;
 extern crate quote;
 
 use proc_macro::TokenStream;
-use table::impl_table;
+use quotes::impl_table;
 
 #[proc_macro_derive(Table, attributes(primary, unique, foreign, on_update, on_delete, foreign_link))]
 pub fn derive_table(input: TokenStream) -> TokenStream {

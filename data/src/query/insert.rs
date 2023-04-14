@@ -17,7 +17,7 @@ impl<I: Insertable<T>, T: Table> InsertQuery<I, T> {
 
   pub fn run(self, database: &Database) -> sqlite::Result<i64> {
     let table_name = T::table_name();
-    let primary_name = T::primary_name();
+    let primary_name = T::primary_column().name;
 
     let column_names = I::get_column_names().join(", ");
     let placeholder_names = I::get_placeholder_names().join(", ");

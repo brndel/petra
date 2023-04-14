@@ -1,6 +1,19 @@
+use std::fmt::Display;
+
 pub struct DataType {
-  pub sql_type: &'static str,
-  pub optional: bool,
+  sql_type: &'static str,
+  optional: bool,
+}
+
+impl Display for DataType {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "{}{}",
+      self.sql_type,
+      if self.optional { "" } else { " NOT NULL" }
+    )
+  }
 }
 
 pub trait AsDataType {
@@ -27,10 +40,10 @@ impl AsDataType for String {
 
 impl<T: AsDataType> AsDataType for Option<T> {
   fn as_data_type() -> DataType {
-    let inner_type = T::as_data_type();
+    let inner_type = T::as_data_type().sql_type;
     DataType {
-      sql_type: inner_type.sql_type,
-      optional: true,
+      sql_type: inner_type,
+      optional: false,
     }
   }
 }

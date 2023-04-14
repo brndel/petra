@@ -1,54 +1,78 @@
-use std::marker::PhantomData;
+use std::{fmt::Display, marker::PhantomData};
 
 use sqlite::{State, Statement};
 
-use crate::{filter::Filter, Link, Table};
+use crate::{filter::Filter, table::Readable, Database, Table, Column};
+
+pub enum Ordering {
+  Ascending,
+  Descending,
+}
+
+impl Display for Ordering {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
+      "{}",
+      match self {
+        Ordering::Ascending => "ASC",
+        Ordering::Descending => "DESC",
+      }
+    )
+  }
+}
 
 pub struct SelectQuery<T: Table> {
-  filter: Option<Filter>,
+  filter: Option<Filter<T>>,
+  ordering: Option<(&'static str, Ordering)>,
   phantom: PhantomData<T>,
 }
 
 impl<T: Table> SelectQuery<T> {
-  pub fn new(filter: Filter) -> Self {
-    Self {
-      filter: Some(filter),
-      phantom: PhantomData,
-    }
-  }
-
-  pub fn id(id: i64) -> Self {
-    Self::new(Filter::new(format!("{} = :filter", T::primary_name()), id))
-  }
-
-  pub fn link<U: Table, L: Table + Link<T> + Link<U>>(id: i64) -> Self {
-    Self::new(Filter::new(
-      format!(
-        "{} IN (SELECT {} FROM {} WHERE {} = :filter)",
-        T::primary_name(),
-        <L as Link<T>>::get_name(),
-        L::table_name(),
-        <L as Link<U>>::get_name(),
-      ),
-      id,
-    ))
-  }
-
-  pub fn all() -> Self {
+  pub fn new() -> Self {
     Self {
       filter: None,
+      ordering: None,
       phantom: PhantomData,
     }
   }
 
-  pub fn run(self, database: &crate::Database) -> sqlite::Result<SelectResult<T>> {
-    let filter = if let Some(filter) = &self.filter {
-      format!(" WHERE {}", filter.to_string())
+  // Builders
+
+  pub fn filter(mut self, filter: Filter<T>) -> Self {
+    self.filter = Some(filter);
+    self
+  }
+
+  pub fn order_by(mut self, column: Column<impl Table>, ordering: Ordering) -> Self {
+    self.ordering = Some((column.name, ordering));
+    self
+  }
+
+  // Runners
+
+  fn get_query<R>(&self) -> String where T: Readable<R> {
+    let column_names = if let Some(cols) = T::get_column_names() {
+      cols.join(", ")
     } else {
-      "".to_string()
+      "*".to_string()
     };
 
-    let q = format!("SELECT * FROM {}{}", T::table_name(), filter);
+    let mut query = format!("SELECT {} FROM {}", column_names, T::table_name());
+
+    if let Some(filter) = &self.filter {
+      query += format!(" WHERE {}", filter).as_str();
+    }
+
+    if let Some((order_by, ordering)) = &self.ordering {
+      query += format!(" ORDER BY {} {}", order_by, ordering).as_str();
+    }
+
+    query
+  }
+
+  fn run<R>(self, database: &Database) -> sqlite::Result<Statement> where T: Readable<R> {
+    let q = self.get_query();
 
     let mut statement = database.prepare(q)?;
 
@@ -56,30 +80,35 @@ impl<T: Table> SelectQuery<T> {
       filter.bind(&mut statement)?;
     }
 
-    let mut data = vec![];
+    Ok(statement)
+  }
 
-    while let State::Row = statement.next()? {
+  fn get_all_inner<R>(self, database: &Database) -> Option<Vec<R>> where T: Readable<R> {
+    let mut data = Vec::new();
+
+    let mut statement = self.run(database).ok()?;
+
+    while let State::Row = statement.next().ok()? {
       data.push(T::read(&statement)?);
     }
 
-    Ok(SelectResult {
-      statement,
-      phantom: PhantomData,
-    })
+    Some(data)
   }
-}
 
-pub struct SelectResult<'a, T: Table> {
-  statement: Statement<'a>,
-  phantom: PhantomData<T>,
-}
+  pub fn get_all<R>(self, database: &Database) -> Vec<R> where T: Readable<R> {
+    self.get_all_inner(database).unwrap_or_default()
+  }
 
-impl<'a, T: Table> SelectResult<'a, T> {
-  pub fn read(&mut self) -> Option<sqlite::Result<T>> {
-    match self.statement.next() {
-      Ok(State::Row) => Some(T::read(&self.statement)),
-      Ok(State::Done) => None,
-      Err(err) => Some(Err(err)),
+  pub fn get_first<R>(self, database: &Database) -> Option<R> where T: Readable<R> {
+    let mut statement = self.run(database).ok()?;
+    if let State::Row = statement.next().ok()? {
+      T::read(&statement)
+    } else {
+      None
     }
   }
 }
+
+// impl<T: Table + Readable<R>, R> SelectQuery<T> {
+  
+// }
