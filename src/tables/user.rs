@@ -1,11 +1,11 @@
 use data::Table;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Table, Debug)]
+#[derive(Deserialize, Serialize, Table)]
 pub struct User {
   #[primary]
   pub id: i64,
-  // #[unique]
+  #[unique]
   pub name: String,
   pub display_name: String,
 }
