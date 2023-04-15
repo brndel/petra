@@ -1,7 +1,7 @@
 use chrono::{DateTime, FixedOffset};
 use data::{
   query::{Ordering, SelectQuery},
-  Database, Table,
+  Database, Table, Filter,
 };
 use serde::Serialize;
 
@@ -35,12 +35,15 @@ pub struct PaymentResponse {
 }
 
 impl Payment {
+  fn user_filter(user_id: i64) -> Filter<Payment> {
+    Self::owner_id().eq(user_id).or(Self::primary_column().link::<PaymentUserLink, User>(user_id))
+  }
+
   pub fn get_payments(database: &Database, user_id: i64) -> Result<Vec<Payment>, Error> {
-    Ok(
-      SelectQuery::new()
-        .filter(Self::owner_id().eq(user_id))
-        .get_all(database),
-    )
+    SelectQuery::new()
+      .filter(Self::user_filter(user_id))
+      .get_all(database)
+      .ok_or(Error::Database)
   }
 
   pub fn get_payments_date(
@@ -49,16 +52,16 @@ impl Payment {
     year: i64,
     month: i64,
   ) -> Result<Vec<Payment>, Error> {
-    Ok(
-      SelectQuery::new()
-        .filter(
-          Self::owner_id()
-            .eq(user_id)
-            .and(Self::timestamp().like(format!("{}-{:0>2}-%", year, month))),
-        )
-        .order_by(Self::timestamp(), Ordering::Descending)
-        .get_all(database),
-    )
+    SelectQuery::new()
+      .filter(
+        Self::timestamp().like(format!("{}-{:0>2}-%", year, month))
+        .and(
+          Self::user_filter(user_id)
+        ),
+      )
+      .order_by(Self::timestamp(), Ordering::Descending)
+      .get_all(database)
+      .ok_or(Error::Database)
   }
 
   pub fn into_response(self, database: &Database) -> PaymentResponse {
@@ -78,11 +81,15 @@ impl Payment {
   }
 
   fn get_users(&self, database: &Database) -> Vec<i64> {
-    database.get_linked::<User, Payment, PaymentUserLink>(self.get_primary())
+    database
+      .get_linked::<User, Payment, PaymentUserLink>(self.get_primary())
+      .unwrap_or_default()
   }
 
   fn get_categories(&self, database: &Database) -> Vec<i64> {
-    database.get_linked::<Category, Payment, PaymentCategoryLink>(self.get_primary())
+    database
+      .get_linked::<Category, Payment, PaymentCategoryLink>(self.get_primary())
+      .unwrap_or_default()
   }
 
   pub fn get_repay(&self, user_id: i64, database: &Database) -> i64 {
