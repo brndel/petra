@@ -1,9 +1,14 @@
 <script lang="ts">
     export let icon: string;
     export let tooltip: string | null = null;
+    export let tooltipLocation: "top" | "bottom" = "top";
 </script>
 
-<span class="material-symbols-rounded" data-tooltip={tooltip}>{icon}</span>
+<span
+    class="material-symbols-rounded"
+    data-tooltip={tooltip}
+    data-tooltip-location={tooltipLocation}>{icon}</span
+>
 
 <style lang="scss">
     span {
@@ -27,7 +32,6 @@
                 padding: var(--small);
                 position: absolute;
 
-                bottom: 100%;
                 transform: scale(0);
                 opacity: 0;
 
@@ -43,10 +47,29 @@
                 transition-delay: 250ms;
                 &::after {
                     transform: scale(1);
-                    bottom: calc(100% + var(--small));
                     opacity: 1;
                     transition-delay: 250ms;
                 }
+            }
+        }
+
+        &[data-tooltip-location="top"] {
+            &::after {
+                bottom: 100%;
+            }
+
+            &:hover::after {
+                bottom: calc(100% + var(--small));
+            }
+        }
+
+        &[data-tooltip-location="bottom"] {
+            &::after {
+                top: 100%;
+            }
+
+            &:hover::after {
+                top: calc(100% + var(--small));
             }
         }
     }
