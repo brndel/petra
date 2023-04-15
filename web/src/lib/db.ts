@@ -70,7 +70,7 @@ export let currentUser = readable<User | null | undefined>(undefined, (set) => {
         if (rawCurrentUser == null) {
             return null;
         }
-        return users.get(rawCurrentUser["id"]);
+        return users.get(rawCurrentUser["user"]);
     })
 });
 
@@ -147,18 +147,6 @@ async function loadRawData(method: string, setter: Writable<any>, args?: {}) {
     let rawData = await apiGet(method, args);
     setter.set(rawData);
 }
-
-// export async function loadCurrentUser() {
-//     await loadDB("current_user");
-// }
-
-// export async function loadUsers() {
-//     await loadDB("user");
-// }
-
-// export async function loadMonthData() {
-//     await loadDB("month_index");
-// }
 
 export async function loadPayments(month: MonthData) {
     await loadDB("payment", { "month": month.month });
