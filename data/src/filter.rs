@@ -4,6 +4,7 @@ use sqlite::{Statement, Value};
 
 use crate::Table;
 
+#[derive(Debug)]
 pub enum FilterValue {
   Text(String),
   Int(i64),
@@ -59,20 +60,18 @@ impl<T: Table> Filter<T> {
     Self::And(Box::new(self), Box::new(other))
   }
 
-
   pub fn or(self, other: Self) -> Self {
     Self::Or(Box::new(self), Box::new(other))
   }
-
 
   pub fn bind(self, statement: &mut Statement) -> sqlite::Result<()> {
     self.bind_counted(statement, &mut 0)
   }
 
   fn bind_counted(self, statement: &mut Statement, counter: &mut usize) -> sqlite::Result<()> {
-    *counter += 1;
     match self {
       Filter::Eq(_, value, _) | Filter::Like(_, value) => {
+        *counter += 1;
         statement.bind::<(_, Value)>((counter.to_owned(), value.into()))
       }
       Filter::And(a, b) | Filter::Or(a, b) => {
