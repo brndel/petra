@@ -8,11 +8,7 @@ pub use error::Error;
 
 pub use request::Request;
 
-extern crate data;
-// #[macro_use]
-// extern crate data_derive;
-
-use data::{query::SelectQuery, Database, PrimKey};
+use data::Database;
 use tables::{
   category::Category, payment::Payment, payment::PaymentCategoryLink, payment::PaymentUserLink,
   user::User,
@@ -20,7 +16,7 @@ use tables::{
 use web_server::HttpServer;
 
 use crate::{
-  foo_data::{insert_foo, ADMIN_USER_ID},
+  foo_data::insert_foo,
   tables::{
     category::CategoryGroup,
     rule::{Rule, RuleCategoryLink},
@@ -41,10 +37,7 @@ fn main() {
   database.create::<Rule>().unwrap();
   database.create::<RuleCategoryLink>().unwrap();
 
-  if SelectQuery::new().filter(User::id().eq(ADMIN_USER_ID)).get_first::<PrimKey>(&database).is_none()
-  {
-    insert_foo(&database);
-  }
+  insert_foo(&database);
 
   let server = HttpServer::new().not_found(Box::new(move |req, _| {
     web::handle(req, &database).unwrap_or_else(|e| e.into())

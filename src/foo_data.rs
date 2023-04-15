@@ -1,6 +1,10 @@
-use crate::tables::{payment::PaymentInsert, payment::PaymentUserLinkInsert, user::UserInsert};
+use crate::tables::{
+  payment::PaymentInsert,
+  payment::PaymentUserLinkInsert,
+  user::{User, UserInsert},
+};
 use chrono::{DateTime, Days, Local};
-use data::Database;
+use data::{query::SelectQuery, Database, PrimKey};
 use rand::{seq::SliceRandom, Rng};
 
 pub const ADMIN_USER_ID: i64 = 1;
@@ -150,6 +154,13 @@ fn insert_payment(database: &Database, name: String, owner_id: i64, now: DateTim
 }
 
 pub fn insert_foo(database: &Database) {
+  if SelectQuery::new()
+    .filter(User::id().eq(ADMIN_USER_ID))
+    .get_first::<PrimKey>(&database)
+    .is_some()
+  {
+    return;
+  }
   let now = Local::now();
 
   let mut rng = rand::thread_rng();
