@@ -126,7 +126,9 @@ export let paymentsArray = readable<Payment[]>([], (set) => {
 
 // Loaders
 
-function getSetter(method: string): Writable<any> | undefined {
+export type LoaderMethod = "current_user" | "user" | "month_index" | "payment";
+
+function getSetter(method: LoaderMethod): Writable<any> | undefined {
     switch (method) {
         case "current_user": return rawCurrentUser;
         case "user": return rawUsers;
@@ -134,7 +136,7 @@ function getSetter(method: string): Writable<any> | undefined {
         case "payment": return rawPayments;
     }
 }
-export async function loadDB(method: string, args?: {}) {
+export async function loadDB(method: LoaderMethod, args?: {}) {
     let setter = getSetter(method);
     if (setter === undefined) {
         console.log("invalid setter '" + method + "'");

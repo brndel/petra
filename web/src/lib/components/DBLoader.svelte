@@ -1,8 +1,8 @@
 <script lang="ts">
-    import { loadDB } from "$lib/db";
+    import { loadDB, type LoaderMethod } from "$lib/db";
     import { onMount } from "svelte";
 
-    export let data: ("current_user" | "month_index" | "user")[] = ["current_user"];
+    export let data: LoaderMethod[] = ["current_user"];
 
     let ready = false;
 
