@@ -1,0 +1,49 @@
+:root {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+
+    --background: #202020;
+    --background-on: #ffffff;
+    --background-dark: #1b1b1b;
+    --background-light: #333333;
+
+    --surface: #2c2c2c;
+    --surface-on: #ffffff;
+    --surface-dark: #1d1d1d;
+    --surface-light: #3f3f3f;
+
+    --primary: #003cff;
+    --primary-on: #ffffff;
+    --primary-dark: #0032d6;
+    --primary-light: #3363ff;
+
+    --button: #2c2c2c;
+    --button-on: #ffffff;
+    --button-dark: #1d1d1d;
+    --button-light: #3f3f3f;
+    --button-shadow: 4px 4px 8px 4px rgba(15, 15, 15, 0.425);
+
+    --small: 8px;
+    --user-size: 42px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+    background-color: var(--background);
+    color: var(--background-on);
+    display: flex;
+    flex-direction: column;
+}
+
+.spacer {
+    flex: 1;
+}
