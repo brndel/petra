@@ -1,18 +1,14 @@
-use data::{query::SelectQuery, Database, Table};
+use data::{query::SelectQuery, Database, PrimKey, Table};
 use serde::Serialize;
 
 use crate::Error;
 
-use super::{category::Category};
-
-pub const SHARED_NONE: i64 = 0;
-pub const SHARED_ALL: i64 = 1;
-pub const SHARED_MAYBE: i64 = 2;
+use super::category::Category;
 
 #[derive(Table)]
 pub struct Rule {
   #[primary]
-  pub id: i64,
+  pub id: PrimKey,
   pub name: String,
   pub shared: i64,
 }
@@ -28,36 +24,46 @@ pub struct RuleResponse {
 
 impl Rule {
   pub fn get_rules(database: &Database) -> Result<Vec<Rule>, Error> {
-    Ok(database.get_all::<Self>())
+    database.get_all::<Self>().ok_or(Error::Database)
   }
 
   pub fn into_response(self, database: &Database) -> RuleResponse {
+    let shared = self.is_shared();
+    let categories = self.get_categories(database);
+    let keywords = self.get_keywords(database);
     RuleResponse {
       id: self.id,
       name: self.name,
-      shared: Self::is_shared(self.shared),
-      categories: Self::get_categories(self.id, database),
-      keywords: Self::get_keywords(self.id, database),
+      shared,
+      categories,
+      keywords,
     }
   }
 
-  fn is_shared(shared: i64) -> Option<bool> {
-    match shared {
-      SHARED_NONE => Some(false),
-      SHARED_ALL => Some(true),
-      SHARED_MAYBE => None,
+  fn is_shared(&self) -> Option<bool> {
+    const NOT_SHARED: i64 = 0;
+    const SHARED: i64 = 1;
+    const CHOOSE: i64 = 2;
+
+    match self.shared {
+      NOT_SHARED => Some(false),
+      SHARED => Some(true),
+      CHOOSE => None,
       _ => None,
     }
   }
 
-  fn get_categories(id: i64, database: &Database) -> Vec<i64> {
-    database.get_linked::<Category, Rule, RuleCategoryLink>(id)
+  fn get_categories(&self, database: &Database) -> Vec<i64> {
+    database
+      .get_linked::<Category, Rule, RuleCategoryLink>(self.get_primary())
+      .unwrap_or_default()
   }
 
-  fn get_keywords(id: i64, database: &Database) -> Vec<String> {
+  fn get_keywords(&self, database: &Database) -> Vec<String> {
     let keywords: Vec<RuleKeyword> = SelectQuery::new()
-      .filter(RuleKeyword::rule_id().eq(id))
-      .get_all(database);
+      .filter(RuleKeyword::rule_id().eq(self.get_primary()))
+      .get_all(database)
+      .unwrap_or_default();
 
     keywords.into_iter().map(|k| k.keyword).collect()
   }
