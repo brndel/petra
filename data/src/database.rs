@@ -27,7 +27,7 @@ impl Database {
     InsertQuery::new(data).run(&self).ok()
   }
 
-  pub fn get_all<T: Table + Readable<T>>(&self) -> Vec<T> {
+  pub fn get_all<T: Table + Readable<T>>(&self) -> Option<Vec<T>> {
     SelectQuery::<T>::new().get_all(self)
   }
 
@@ -35,7 +35,7 @@ impl Database {
     SelectQuery::new().filter(T::primary_column().eq(primary)).get_first(self)
   }
 
-  pub fn get_linked<T: Table + Readable<PrimKey>, U: Table, L: Link<T> + Link<U> + Table>(&self, primary: PrimKey) -> Vec<PrimKey> {
+  pub fn get_linked<T: Table + Readable<PrimKey>, U: Table, L: Link<T> + Link<U> + Table>(&self, primary: PrimKey) -> Option<Vec<PrimKey>> {
     SelectQuery::new().filter(T::primary_column().link::<L, U>(primary)).get_all(self)
   }
 
