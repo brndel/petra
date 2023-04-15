@@ -2,7 +2,7 @@ use std::{fmt::Display, marker::PhantomData};
 
 use sqlite::{State, Statement};
 
-use crate::{filter::Filter, table::Readable, Database, Table, Column};
+use crate::{filter::Filter, table::Readable, Column, Database, Table};
 
 pub enum Ordering {
   Ascending,
@@ -51,7 +51,10 @@ impl<T: Table> SelectQuery<T> {
 
   // Runners
 
-  fn get_query<R>(&self) -> String where T: Readable<R> {
+  fn get_query<R>(&self) -> String
+  where
+    T: Readable<R>,
+  {
     let column_names = if let Some(cols) = T::get_column_names() {
       cols.join(", ")
     } else {
@@ -71,7 +74,10 @@ impl<T: Table> SelectQuery<T> {
     query
   }
 
-  fn run<R>(self, database: &Database) -> sqlite::Result<Statement> where T: Readable<R> {
+  fn run<R>(self, database: &Database) -> sqlite::Result<Statement>
+  where
+    T: Readable<R>,
+  {
     let q = self.get_query();
 
     let mut statement = database.prepare(q)?;
@@ -83,7 +89,10 @@ impl<T: Table> SelectQuery<T> {
     Ok(statement)
   }
 
-  fn get_all_inner<R>(self, database: &Database) -> Option<Vec<R>> where T: Readable<R> {
+  pub fn get_all<R>(self, database: &Database) -> Option<Vec<R>>
+  where
+    T: Readable<R>,
+  {
     let mut data = Vec::new();
 
     let mut statement = self.run(database).ok()?;
@@ -95,11 +104,10 @@ impl<T: Table> SelectQuery<T> {
     Some(data)
   }
 
-  pub fn get_all<R>(self, database: &Database) -> Vec<R> where T: Readable<R> {
-    self.get_all_inner(database).unwrap_or_default()
-  }
-
-  pub fn get_first<R>(self, database: &Database) -> Option<R> where T: Readable<R> {
+  pub fn get_first<R>(self, database: &Database) -> Option<R>
+  where
+    T: Readable<R>,
+  {
     let mut statement = self.run(database).ok()?;
     if let State::Row = statement.next().ok()? {
       T::read(&statement)
@@ -110,5 +118,5 @@ impl<T: Table> SelectQuery<T> {
 }
 
 // impl<T: Table + Readable<R>, R> SelectQuery<T> {
-  
+
 // }
