@@ -35,7 +35,7 @@
                 transform: scale(0);
                 opacity: 0;
 
-                transition-property: transform, opacity, bottom;
+                transition-property: transform, opacity, bottom, top;
                 transition-duration: 200ms;
                 transition-timing-function: cubic-bezier(0.5, 0, 0.5, 1);
             }
@@ -55,7 +55,7 @@
 
         &[data-tooltip-location="top"] {
             &::after {
-                bottom: 100%;
+                bottom: 50%;
             }
 
             &:hover::after {
@@ -65,7 +65,7 @@
 
         &[data-tooltip-location="bottom"] {
             &::after {
-                top: 100%;
+                top: 50%;
             }
 
             &:hover::after {
