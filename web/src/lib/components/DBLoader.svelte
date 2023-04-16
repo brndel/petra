@@ -7,7 +7,7 @@
     let ready = false;
 
     onMount(async () => {
-        for(const d of data) {
+        for (const d of data) {
             await loadDB(d);
         }
         ready = true;
@@ -16,8 +16,15 @@
 
 <h1>
     {#if ready}
-        Hey
+        <a href="/"> Petra </a>
     {:else}
         ...
     {/if}
 </h1>
+
+<style>
+    a {
+        color: var(--surface-on);
+        text-decoration: none;
+    }
+</style>

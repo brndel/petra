@@ -60,30 +60,6 @@
 
     .col,
     .row {
-        gap: var(--small);
         justify-content: space-between;
-        align-items: stretch;
-    }
-
-    .col {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .row {
-        display: flex;
-        flex-direction: row;
-    }
-
-    .end {
-        align-items: flex-end;
-    }
-
-    .center {
-        align-items: center;
-    }
-
-    .start {
-        align-items: flex-start;
     }
 </style>

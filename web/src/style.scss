@@ -47,3 +47,48 @@ body {
 .spacer {
     flex: 1;
 }
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+}
+
+.row {
+    flex-direction: row;
+}
+
+.col {
+    flex-direction: column;   
+}
+
+.row, .col {
+    display: flex;
+    gap: var(--small);
+    &.center {
+        align-items: center;
+    }
+
+    &.start {
+        align-items: start;
+    }
+
+    &.end {
+        align-items: end;
+    }
+
+    &.stretch {
+        align-items: stretch;
+    }
+}
+
+main>.col {
+    flex: 1;
+    padding: var(--small);
+}
+
+main>.col.side {
+    width: 256px;
+    flex: none;
+    background-color: var(--background-dark);
+}
