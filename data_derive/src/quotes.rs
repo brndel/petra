@@ -26,6 +26,7 @@ pub fn impl_table(ast: syn::DeriveInput) -> Result<TokenStream, Error> {
   let primary = primary.ok_or_else(|| Error::new_spanned(name, "No primary field set"))?;
 
   let insert_struct_quote = insert_quote(name, &columns);
+  let update_impl_quote = update_quote(name, &columns);
   let columns_impl_quote = columns_quote(name, &columns);
   let table_impl_quote = impl_quote(name, &columns, &primary);
   let link_impl_quote = link_quote(name, &columns);
@@ -34,6 +35,8 @@ pub fn impl_table(ast: syn::DeriveInput) -> Result<TokenStream, Error> {
   Ok(
     quote! {
       #insert_struct_quote
+
+      #update_impl_quote
 
       #columns_impl_quote
 
@@ -64,6 +67,40 @@ fn insert_quote(name: &Ident, columns: &Vec<Column>) -> quote::__private::TokenS
     }
 
     impl data::Insertable<#name> for #insert_name {
+
+      fn get_column_names() -> &'static [&'static str] {
+        &[
+          #(#column_names,)*
+        ]
+      }
+
+      fn get_placeholder_names() -> &'static [&'static str] {
+        &[
+          #(#placeholder_names,)*
+        ]
+      }
+
+      fn bind(self, statement: &mut data::sqlite::Statement) -> data::sqlite::Result<()> {
+        statement.bind_iter::<_, (_, data::sqlite::Value)>([
+          #(
+            (#placeholder_names2, self.#idents.into()),
+          )*
+        ])
+      }
+    }
+  )
+}
+
+fn update_quote(name: &Ident, columns: &Vec<Column>) -> quote::__private::TokenStream {
+  let columns = columns.iter();
+  let idents = columns.clone().map(|c| c.ident.clone());
+
+  let column_names = columns.clone().map(|c| c.ident.to_string());
+  let placeholder_names = column_names.clone().map(|name| format!(":{}", name));
+  let placeholder_names2 = placeholder_names.clone();
+
+  quote!(
+    impl data::Updatable<#name> for #name {
 
       fn get_column_names() -> &'static [&'static str] {
         &[

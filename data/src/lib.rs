@@ -12,6 +12,7 @@ pub use table::modifier::ForeignRule;
 pub use table::Table;
 pub use table::Readable;
 pub use table::Insertable;
+pub use table::Updatable;
 pub use table::Column;
 pub use table::Link;
 pub use filter::Filter;

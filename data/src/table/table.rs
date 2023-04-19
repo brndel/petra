@@ -28,8 +28,29 @@ pub trait Insertable<T: Table> {
   fn bind(self, statement: &mut Statement) -> sqlite::Result<()>;
 }
 
+pub trait Updatable<T: Table> {
+  fn get_column_names() -> &'static [&'static str];
+  fn get_placeholder_names() -> &'static [&'static str];
+
+  fn bind(self, statement: &mut Statement) -> sqlite::Result<()>;
+}
+
 pub trait Link<T: Table> {
   fn link_name() -> &'static str;
+}
+
+impl<T: Table + Updatable<T>> Insertable<T> for T {
+    fn get_column_names() -> &'static [&'static str] {
+        T::get_column_names()
+    }
+
+    fn get_placeholder_names() -> &'static [&'static str] {
+        T::get_placeholder_names()
+    }
+
+    fn bind(self, statement: &mut Statement) -> sqlite::Result<()> {
+        T::bind(self, statement)
+    }
 }
 
 // FOO DATA
