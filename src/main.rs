@@ -3,6 +3,7 @@ mod foo_data;
 mod request;
 mod tables;
 mod web;
+mod util;
 
 pub use error::Error;
 
@@ -19,7 +20,7 @@ use crate::{
   foo_data::insert_foo,
   tables::{
     category::CategoryGroup,
-    rule::{Rule, RuleCategoryLink},
+    rule::{Rule, RuleCategoryLink}, tink_token::{TinkToken, TinkPayment},
   },
 };
 
@@ -36,6 +37,8 @@ fn main() {
   database.create::<PaymentUserLink>().unwrap();
   database.create::<Rule>().unwrap();
   database.create::<RuleCategoryLink>().unwrap();
+  database.create::<TinkToken>().unwrap();
+  database.create::<TinkPayment>().unwrap();
 
   insert_foo(&database);
 

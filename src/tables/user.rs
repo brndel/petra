@@ -8,4 +8,5 @@ pub struct User {
   #[unique]
   pub name: String,
   pub display_name: String,
+  pub auth_hash: String,
 }

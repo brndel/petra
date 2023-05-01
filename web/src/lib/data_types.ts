@@ -1,7 +1,8 @@
 export type User = {
     id: number,
     name: string,
-    displayName: string,
+    userName: string,
+    icon: string,
 }
 
 export type CategoryGroup = {
@@ -17,6 +18,14 @@ export type Category = {
     group: CategoryGroup
 }
 
+export type Rule = {
+    id: number,
+    name: string,
+    paymentRename: string,
+    categories: Category[]
+    shareRule: boolean | null,
+}
+
 export type Payment = {
     id: number,
     name: string,
@@ -28,7 +37,21 @@ export type Payment = {
     categories: Category[]
 }
 
+export type EditablePayment = {
+    name: string,
+    amount: number,
+    date: Date,
+    users: User[],
+    categories: Category[],
+    rule: Rule | null,
 
+    importInfo: EditablePaymentImportInfo | undefined,
+}
+
+export type EditablePaymentImportInfo = {
+    nameRaw: string,
+    refHash: string,
+}
 
 export type MonthData = {
     // "2023-12"
@@ -36,4 +59,9 @@ export type MonthData = {
     positive: number,
     negative: number,
     repay: number
+}
+
+export type TinkImportInfo = {
+    pending: number,
+    listed: number
 }

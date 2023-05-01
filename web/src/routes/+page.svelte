@@ -1,14 +1,15 @@
 <script lang="ts">
     import MonthButton from "$lib/components/MonthButton.svelte";
     import PaymentView from "$lib/components/PaymentView.svelte";
-    import { monthsArray, paymentsArray, sumMonth } from "../lib/db";
+    import { monthIndexArray, paymentsArray, sumMonth } from "../lib/db";
     import MoneySpan from "$lib/components/MoneySpan.svelte";
     import Headerbar from "$lib/components/Headerbar.svelte";
+    import MonthGraph from "$lib/components/MonthGraph.svelte";
 
     $: overview = $sumMonth;
 </script>
 
-<Headerbar loader_data={["current_user", "user", "month_index"]} />
+<Headerbar loader_data={["current_user", "user", "month_index", "category", "category_group"]} />
 <main>
     <div class="col side">
         <div class="overview col">
@@ -25,24 +26,14 @@
                 <MoneySpan amount={overview.repay} role="repay" />
             {/if}
         </div>
-        {#each $monthsArray as month}
+        {#each $monthIndexArray as month}
             <MonthButton {month} />
         {/each}
     </div>
     <div class="col">
+        <MonthGraph payments={$paymentsArray}/>
         {#each $paymentsArray as payment}
             <PaymentView {payment} />
         {/each}
     </div>
 </main>
-
-<style>
-    .overview {
-        aspect-ratio: 1;
-        border-radius: var(--small);
-        background-color: var(--surface);
-        align-items: center;
-        justify-content: space-around;
-        gap: var(--small);
-    }
-</style>

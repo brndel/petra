@@ -2,13 +2,13 @@
     import type { User } from "$lib/data_types";
     import UserView from "./UserView.svelte";
 
-    export let users: User[];
+    export let userNames: string[];
 </script>
 
 <div class="player-stack">
-    {#each users as user}
+    {#each userNames as userName}
         <div class="user-holder">
-            <UserView {user} />
+            <UserView {userName} />
         </div>
     {/each}
 </div>

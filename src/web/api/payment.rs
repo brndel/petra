@@ -3,35 +3,26 @@ use data::Database;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-  tables::payment::{Payment, PaymentCategoryLinkInsert, PaymentInsert, PaymentUserLinkInsert},
+  tables::{
+    payment::{Payment, PaymentCategoryLinkInsert, PaymentInsert, PaymentUserLinkInsert},
+    tink_token::TinkPayment,
+  },
   Error, Request,
 };
 
 use super::serialize;
 
 pub fn get_payments(request: &Request) -> Result<String, Error> {
-  let date = request
+  let month = request
     .params
     .get("month")
     .ok_or(Error::BadRequest("Missing 'month' parameter".to_string()))?;
 
-  let parts: Vec<_> = date.split('-').collect();
-
-  let year = parts
-    .get(0)
-    .ok_or(Error::BadRequest("invalid format for 'month'".to_string()))?;
-  let month = parts
-    .get(1)
-    .ok_or(Error::BadRequest("invalid format for 'month'".to_string()))?;
-
-  let year = year
-    .parse()
-    .map_err(|_| Error::BadRequest("could not parse year".to_string()))?;
   let month = month
     .parse()
-    .map_err(|_| Error::BadRequest("could not parse month".to_string()))?;
+    .map_err(|_| Error::BadRequest("Invalid 'month' format".to_string()))?;
 
-  let payments = Payment::get_payments_date(request.database, request.user_id, year, month)?;
+  let payments = Payment::get_payments_date(request.database, request.user_id, month)?;
   let payments: Vec<_> = payments
     .into_iter()
     .map(|e| e.into_response(request.database))
@@ -47,6 +38,7 @@ struct PaymentPostData {
   timestamp: String,
   users: Vec<i64>,
   categories: Vec<i64>,
+  ref_hash: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -66,6 +58,7 @@ enum PaymentInsertError {
   InvalidPayment(String, i64),
   InvalidUser(i64),
   InvalidCategory(i64),
+  TinkPayment,
 }
 
 pub fn post_payments(request: &Request) -> Result<String, Error> {
@@ -138,7 +131,16 @@ fn insert_payment(
       payment_id,
       category_id,
     }) {
-      errors.push(PaymentInsertError::InvalidCategory(category_id))
+      errors.push(PaymentInsertError::InvalidCategory(category_id));
+    }
+  }
+
+  if let Some(ref_hash) = data.ref_hash {
+    if let None = database.insert(TinkPayment {
+      payment_id,
+      tink_transaction_hash: ref_hash,
+    }) {
+      errors.push(PaymentInsertError::TinkPayment);
     }
   }
 

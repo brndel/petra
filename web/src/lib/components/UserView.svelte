@@ -1,7 +1,5 @@
 <script lang="ts">
-    import type { User } from "$lib/data_types";
-
-    export let user: User;
+    export let userName: string;
 
     function createRng(seed: number) {
         // Mulberry32
@@ -26,11 +24,11 @@
         return `hsl(${x}, 80%, 40%)`;
     }
 
-    $: color = getColor(user.name);
+    $: color = getColor(userName);
 </script>
 
 <span style="background-color: {color};">
-    {user.displayName}
+    {userName}
 </span>
 
 <style>
@@ -46,6 +44,5 @@
         justify-content: center;
         font-weight: bold;
         font-size: 10px;
-        outline: 4px solid var(--surface);
     }
 </style>

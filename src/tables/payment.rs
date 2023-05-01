@@ -5,7 +5,7 @@ use data::{
 };
 use serde::Serialize;
 
-use crate::Error;
+use crate::{Error, util::ExactMonth};
 
 use super::{category::Category, user::User};
 
@@ -49,12 +49,11 @@ impl Payment {
   pub fn get_payments_date(
     database: &Database,
     user_id: i64,
-    year: i64,
-    month: i64,
+    month: ExactMonth
   ) -> Result<Vec<Payment>, Error> {
     SelectQuery::new()
       .filter(
-        Self::timestamp().like(format!("{}-{:0>2}-%", year, month))
+        Self::timestamp().like(format!("{}-%", month))
         .and(
           Self::user_filter(user_id)
         ),

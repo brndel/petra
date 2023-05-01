@@ -16,7 +16,7 @@
     <a href="add"><Icon icon="add" tooltip="Neu" tooltipLocation="bottom"/></a>
 
     {#if user !== undefined && user !== null}
-        <UserView {user} />
+        <UserView userName={user.userName} />
     {/if}
 </header>
 

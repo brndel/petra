@@ -1,5 +1,6 @@
 <script lang="ts">
     import type { Payment } from "$lib/data_types";
+    import { formatDate } from "$lib/text";
     import Icon from "./Icon.svelte";
     import MoneySpan from "./MoneySpan.svelte";
     import UserStack from "./UserStack.svelte";
@@ -10,13 +11,6 @@
     $: showUsers = !(
         payment.users.length == 1 && payment.users[0] == payment.owner
     );
-
-    $: date = `${payment.timestamp.getDate()}.${
-        payment.timestamp.getMonth() + 1
-    } ${payment.timestamp.getHours()}:${payment.timestamp
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}`;
 </script>
 
 <div class="payment row">
@@ -24,17 +18,17 @@
         <span>
             {payment.name}
             &#x2219;
-            {date}
+            {formatDate(payment.timestamp)}
         </span>
         <div class="row center">
-            <UserView user={payment.owner} />
+            <UserView userName={payment.owner.userName} />
             {#if showUsers}
                 <Icon icon="arrow_right" />
-                <UserStack users={payment.users} />
+                <UserStack userNames={payment.users.map((v) => v.userName)} />
             {/if}
         </div>
     </div>
-    <div class="row center">
+    <div class="row center categories">
         {#each payment.categories as category}
             <Icon icon={category.icon} tooltip={category.name} />
         {/each}
@@ -51,15 +45,23 @@
     </div>
 </div>
 
-<style>
+<style lang="scss">
     .payment {
         background-color: var(--surface);
         border-radius: var(--small);
         padding: var(--small);
+
+        & > * {
+            flex: 1;
+        }
     }
 
     .col,
     .row {
         justify-content: space-between;
+    }
+
+    .row.categories {
+        justify-content: start;
     }
 </style>

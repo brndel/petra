@@ -83,7 +83,7 @@ fn insert_quote(name: &Ident, columns: &Vec<Column>) -> quote::__private::TokenS
       fn bind(self, statement: &mut data::sqlite::Statement) -> data::sqlite::Result<()> {
         statement.bind_iter::<_, (_, data::sqlite::Value)>([
           #(
-            (#placeholder_names2, self.#idents.into()),
+            (#placeholder_names2, Into::<data::FilterValue>::into(self.#idents).into()),
           )*
         ])
       }
@@ -117,7 +117,7 @@ fn update_quote(name: &Ident, columns: &Vec<Column>) -> quote::__private::TokenS
       fn bind(self, statement: &mut data::sqlite::Statement) -> data::sqlite::Result<()> {
         statement.bind_iter::<_, (_, data::sqlite::Value)>([
           #(
-            (#placeholder_names2, self.#idents.into()),
+            (#placeholder_names2, Into::<data::FilterValue>::into(self.#idents).into()),
           )*
         ])
       }

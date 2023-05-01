@@ -22,6 +22,11 @@
     --button-light: #3f3f3f;
     --button-shadow: 4px 4px 8px 4px rgba(15, 15, 15, 0.425);
 
+    --error: #ff0000;
+    --error-on: #ffffff;
+    --positive: #00aa00;
+    --positive-on: #ffffff;
+
     --small: 8px;
     --user-size: 42px;
 }
@@ -59,14 +64,20 @@ main {
 }
 
 .col {
-    flex-direction: column;   
+    flex-direction: column;
 }
 
-.row, .col {
+.row,
+.col {
     display: flex;
     gap: var(--small);
+
     &.center {
         align-items: center;
+    }
+
+    &.center-j {
+        justify-content: center;
     }
 
     &.start {
@@ -80,6 +91,10 @@ main {
     &.stretch {
         align-items: stretch;
     }
+
+    &.space {
+        justify-content: space-between;
+    }
 }
 
 main>.col {
@@ -91,4 +106,41 @@ main>.col.side {
     width: 256px;
     flex: none;
     background-color: var(--background-dark);
+
+    & .overview {
+        aspect-ratio: 1;
+        border-radius: var(--small);
+        background-color: var(--surface);
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--small);
+        gap: var(--small);
+    }
+}
+
+span.center,
+.text-center {
+    text-align: center;
+}
+
+input[type=text], input[type=number], select {
+    border: none;
+    background-color: var(--surface-dark);
+    color: var(--surface-on);
+    border-radius: var(--small);
+    padding: var(--small);
+    // appearance: textfield;
+
+    &:focus {
+        outline: 2px solid var(--primary);
+    }
+    
+    &:invalid {
+        outline: 2px solid var(--error);
+    }
+
+}
+
+.error {
+    outline: 2px solid var(--error);
 }

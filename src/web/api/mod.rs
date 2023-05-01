@@ -4,8 +4,7 @@ mod month_index;
 mod payment;
 mod rule;
 mod user;
-
-use std::{ffi::OsStr, path::Component::Normal};
+mod tink;
 
 pub use category::get_categories;
 pub use payment::get_payments;
@@ -19,16 +18,12 @@ use crate::{
 
 use self::{
   category::get_category_groups, current_user::get_current_user, month_index::get_month_index,
-  payment::post_payments, rule::get_rules, user::get_users,
+  payment::post_payments, rule::get_rules, user::get_users, tink::{token::{get_tink_token_callback, get_tink_token}, payment::get_tink_payments},
 };
 
 pub fn handle_api(request: &Request) -> Option<Result<Response, Error>> {
-  let mut components = request.path.components();
-
-  if components.next() == Some(Normal(OsStr::new("api"))) {
-    if let Some(method) = components.next().and_then(|e| e.as_os_str().to_str()) {
-      return Some(handle_methods(method, request));
-    }
+  if let Ok(path) = request.path.to_path_buf().strip_prefix("api/") {
+    return Some(handle_methods(&path.to_string_lossy(), request));
   }
 
   None
@@ -48,6 +43,10 @@ fn handle_methods(method: &str, request: &Request) -> Result<Response, Error> {
       "category_group" => get_category_groups(request),
       "category" => get_categories(request),
       "rule" => get_rules(request),
+      // Tink
+      "tink/token_callback" => get_tink_token_callback(request),
+      "tink/token" => get_tink_token(request),
+      "tink/payment" => get_tink_payments(request),
       _ => Err(Error::NotFound),
     }?,
     Post => match method {
@@ -66,5 +65,5 @@ fn handle_methods(method: &str, request: &Request) -> Result<Response, Error> {
 }
 
 fn serialize<T: Serialize>(data: &T) -> Result<String, Error> {
-  serde_json::to_string(data).map_err(|_| Error::Inernal("could not serialize result".to_string()))
+  serde_json::to_string(data).map_err(|_| Error::Internal)
 }

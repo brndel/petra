@@ -45,15 +45,17 @@ pub fn create_request<'a>(
     let auth = header.strip_prefix("Basic ")?;
     let bytes = general_purpose::STANDARD.decode(auth).ok()?;
     let auth = String::from_utf8(bytes).ok()?;
-    let auth_name = auth.split(':').nth(0)?;
+    let auth_hash = sha256::digest(auth.as_str());
+    let mut auth_name = auth.split(':').nth(0)?.to_owned();
+    auth_name = auth_name.to_lowercase().replace(" ", "_");
 
-    SelectQuery::new().filter(User::name().eq(auth_name.to_string())).get_first(database)
+    SelectQuery::new().filter(User::name().eq(auth_name).and(User::auth_hash().eq(auth_hash))).get_first(database)
   }
 
   let user_id = get_user_id(request, database).ok_or(Error::Auth)?;
 
   let method = Method::try_from(request.get_method())
-    .map_err(|_| Error::Inernal("Invalid method".to_string()))?;
+    .map_err(|_| Error::BadRequest("Invalid method".to_string()))?;
 
   let params = request.query.to_owned();
 
@@ -69,7 +71,7 @@ pub fn create_request<'a>(
 
 fn handle_request(request: &Request) -> Result<Response, Error> {
   println!("{request:?}");
-  let response = handle_file(request).or_else(|| handle_api(request));
+  let response = handle_api(request).or_else(|| handle_file(request));
 
   response.unwrap_or_else(|| Err(Error::NotFound))
 }

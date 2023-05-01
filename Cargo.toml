@@ -13,3 +13,5 @@ serde_json = "1.0.95"
 data = { path = "data" }
 chrono = { version = "0.4.24", features = ["serde"] }
 rand = "0.8.5"
+minreq = { version = "2.7.0", features = ["https", "json-using-serde"] }
+sha256 = "1.1.3"
