@@ -20,7 +20,15 @@ export function getMonthList(): { id: number, name: string }[] {
 
 }
 
-export function getMonthName(month: MonthData): string {
+export function getMonthName(month: MonthData | null): string {
+    if (month === null) {
+        return ""
+    }
+    
+    if (month.month === "*") {
+        return "Gesamt"
+    }
+
     let parts = month.month.split("-");
     let yearPart: string = parts[0];
     let monthPart: string = parts[1];
@@ -50,10 +58,9 @@ export function getMonthName(month: MonthData): string {
 }
 
 export function formatDate(date: Date): string {
-    return `${date.getDate()}.${
-        date.getMonth() + 1
-    } ${date.getHours()}:${date
-        .getMinutes()
-        .toString()
-        .padStart(2, "0")}`;
+    return `${date.getDate()}.${date.getMonth() + 1}`;
+    // ${date.getHours()}:${date
+    //     .getMinutes()
+    //     .toString()
+    //     .padStart(2, "0")}
 }

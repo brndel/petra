@@ -27,9 +27,9 @@ impl TryInto<ResponsePayment> for TinkTransaction {
     let amount = self.amount.try_into()?;
     let is_booked = self.status == "BOOKED";
 
-    let detailed_unstructured = self.descriptions.detailed.unstructured;
+    // let detailed_unstructured = self.descriptions.detailed.unstructured;
 
-    let ref_hash = digest(format!("{name}:{name_raw}:{date}:{amount}:{detailed_unstructured}"));
+    let ref_hash = digest(format!("{name}|{name_raw}|{date}|{amount}"));
 
     Ok(ResponsePayment {
       name,
@@ -56,8 +56,8 @@ impl ResponsePayment {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct TinkTransaction {
-  id: String,
-  account_id: String,
+  // id: String,
+  // account_id: String,
   amount: TinkAmount,
   descriptions: TinkDescriptions,
   dates: TinkDates,
@@ -68,7 +68,7 @@ pub struct TinkTransaction {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct TinkAmount {
-  currency_code: String,
+  // currency_code: String,
   value: TinkAmountValue,
 }
 
@@ -99,45 +99,45 @@ struct TinkDates {
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct TinkDescriptions {
-  detailed: TinkDetailedDescriptions,
+  // detailed: Option<TinkDetailedDescriptions>,
   display: String,
   original: String,
 }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct TinkDetailedDescriptions {
-  unstructured: String,
-}
+// #[derive(Deserialize, Debug)]
+// #[serde(rename_all = "camelCase")]
+// struct TinkDetailedDescriptions {
+//   unstructured: String,
+// }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct TinkIdentifier {
-  provider_transaction_id: String,
-}
+// #[derive(Deserialize, Debug)]
+// #[serde(rename_all = "camelCase")]
+// struct TinkIdentifier {
+//   provider_transaction_id: String,
+// }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct TinkCounterparties {
-  payer: TinkCounterpartyInfo,
-  payee: TinkCounterpartyInfo,
-}
+// #[derive(Deserialize, Debug)]
+// #[serde(rename_all = "camelCase")]
+// struct TinkCounterparties {
+//   payer: TinkCounterpartyInfo,
+//   payee: TinkCounterpartyInfo,
+// }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct TinkCounterpartyInfo {
-  identifiers: TinkCounterpartyIdent,
-  name: String,
-}
+// #[derive(Deserialize, Debug)]
+// #[serde(rename_all = "camelCase")]
+// struct TinkCounterpartyInfo {
+//   identifiers: TinkCounterpartyIdent,
+//   name: String,
+// }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct TinkCounterpartyIdent {
-  financial_institution: TinkCounterpartyInstitution,
-}
+// #[derive(Deserialize, Debug)]
+// #[serde(rename_all = "camelCase")]
+// struct TinkCounterpartyIdent {
+//   financial_institution: TinkCounterpartyInstitution,
+// }
 
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct TinkCounterpartyInstitution {
-  account_number: String,
-}
+// #[derive(Deserialize, Debug)]
+// #[serde(rename_all = "camelCase")]
+// struct TinkCounterpartyInstitution {
+//   account_number: String,
+// }

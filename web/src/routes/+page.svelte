@@ -1,39 +1,52 @@
 <script lang="ts">
     import MonthButton from "$lib/components/MonthButton.svelte";
     import PaymentView from "$lib/components/PaymentView.svelte";
-    import { monthIndexArray, paymentsArray, sumMonth } from "../lib/db";
     import MoneySpan from "$lib/components/MoneySpan.svelte";
     import Headerbar from "$lib/components/Headerbar.svelte";
     import MonthGraph from "$lib/components/MonthGraph.svelte";
+    import { getMonthName } from "$lib/text";
+    import Icon from "$lib/components/Icon.svelte";
+    import MonthOverview from "$lib/components/MonthOverview.svelte";
+    import { monthArray, sumMonth } from "$lib/db/month";
+    import { paymentArray, selectedMonth } from "$lib/db/payment";
 
     $: overview = $sumMonth;
+
+    $: selected = $selectedMonth;
 </script>
 
-<Headerbar loader_data={["current_user", "user", "month_index", "category", "category_group"]} />
-<main>
-    <div class="col side">
-        <div class="overview col">
-            {#if overview != undefined}
-                <h3>Gesamt</h3>
-                <div class="col center">
-                    <MoneySpan amount={overview.positive} />
-                    <MoneySpan amount={overview.negative} />
-                    <MoneySpan
-                        amount={overview.positive + overview.negative}
-                        role="neutral"
-                    />
-                </div>
-                <MoneySpan amount={overview.repay} role="repay" />
-            {/if}
-        </div>
-        {#each $monthIndexArray as month}
-            <MonthButton {month} />
-        {/each}
-    </div>
-    <div class="col">
-        <MonthGraph payments={$paymentsArray}/>
-        {#each $paymentsArray as payment}
+<Headerbar
+    loader_data={[
+        "current_user",
+        "user",
+        "month_index",
+        "category",
+        "category_group",
+    ]}
+/>
+
+<div class="col side">
+    {#if overview != undefined}
+        <MonthOverview month={overview} />
+    {/if}
+    {#each $monthArray as month}
+        <MonthButton {month} />
+    {/each}
+</div>
+<div class="col main">
+    {#if selected !== null}
+        <MonthGraph payments={$paymentArray} />
+        {#each $paymentArray as payment}
             <PaymentView {payment} />
         {/each}
+    {:else}
+        <div class="col center">
+            <h2>Bitte irgendwas auswählen</h2>
+        </div>
+    {/if}
+</div>
+{#if selected !== null}
+    <div class="col side">
+        <MonthOverview month={selected} />
     </div>
-</main>
+{/if}

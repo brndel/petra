@@ -1,13 +1,14 @@
 <script lang="ts">
     import type { MonthData } from "$lib/data_types";
-    import { loadPayments } from "$lib/db";
+    import { loadPayments } from "$lib/db/payment";
     import { getMonthName } from "$lib/text";
+    import Icon from "./Icon.svelte";
     import MoneySpan from "./MoneySpan.svelte";
 
     export let month: MonthData;
 
     $: totalAmount = month.positive + month.negative;
-    // $: totalRepayAmount = totalAmount + month.repayAmount;
+    $: calculatedAmount = totalAmount + month.repay;
 
     function onButtonClick() {
         loadPayments(month);
@@ -18,17 +19,15 @@
     <span>
         {getMonthName(month)}
     </span>
-    <div class="money">
-        <MoneySpan amount={month.positive} />
-        <MoneySpan amount={month.negative} />
-        <MoneySpan
-            amount={totalAmount}
-            role="neutral"
-        />
-    </div>
-    <div class="money">
+    <div class="row space">
         <MoneySpan amount={month.repay} role="repay" />
+        <MoneySpan amount={calculatedAmount} role="auto" />
     </div>
+    <!-- <div class="money">
+    </div>
+    <div class="money">
+        <Icon icon="arrow_right" />
+    </div> -->
 </button>
 
 <style>
@@ -50,11 +49,5 @@
 
     button:hover {
         background-color: var(--button-dark);
-    }
-
-    .money {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
     }
 </style>

@@ -5,6 +5,10 @@ use crate::Error;
 
 use super::category::Category;
 
+const NOT_SHARED: i64 = 0;
+const SHARED: i64 = 1;
+const CHOOSE: i64 = 2;
+
 #[derive(Table)]
 pub struct Rule {
   #[primary]
@@ -41,15 +45,19 @@ impl Rule {
   }
 
   fn is_shared(&self) -> Option<bool> {
-    const NOT_SHARED: i64 = 0;
-    const SHARED: i64 = 1;
-    const CHOOSE: i64 = 2;
-
     match self.shared {
       NOT_SHARED => Some(false),
       SHARED => Some(true),
       CHOOSE => None,
       _ => None,
+    }
+  }
+
+  pub fn get_share_num(shared: &Option<bool>) -> i64 {
+    match shared {
+      Some(true) => SHARED,
+      Some(false) => NOT_SHARED,
+      None => CHOOSE,
     }
   }
 

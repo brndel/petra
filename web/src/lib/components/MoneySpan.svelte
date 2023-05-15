@@ -34,6 +34,7 @@
 
 <style>
     span {
+        font-family: monospace;
         font-size: 16px;
         font-weight: bold;
         display: flex;

@@ -2,11 +2,10 @@ use chrono::{Duration, Local};
 use data::Database;
 use serde::{Deserialize, Serialize};
 
-use crate::{tables::tink_token::TinkToken, web::api::serialize, Error, Request};
+use crate::{tables::tink_token::TinkToken, web::api::{serialize, tink::tink_secret::{get_tink_client_id, get_tink_client_secret}}, Error, Request};
 
 use super::{
   get_token,
-  tink_secret::{CLIENT_ID, CLIENT_SECRET},
 };
 
 pub fn get_tink_token_callback(request: &Request) -> Result<String, Error> {
@@ -65,7 +64,7 @@ fn request_tink_token(code: &str) -> Result<TinkAuthData, minreq::Error> {
 
   let body = format!(
     "code={}&client_id={}&client_secret={}&grant_type={}",
-    code, CLIENT_ID, CLIENT_SECRET, "authorization_code"
+    code, get_tink_client_id(), get_tink_client_secret(), "authorization_code"
   );
 
   let request = minreq::post("https://api.tink.com/api/v1/oauth/token")

@@ -34,13 +34,10 @@
         {/each}
     </div>
     <div class="col end">
-        <MoneySpan amount={payment.amount} role="auto" />
+        <MoneySpan amount={payment.amount + payment.repayAmount} role="auto" />
         {#if showUsers}
-            <MoneySpan amount={payment.repayAmount} role="repay" />
-            <MoneySpan
-                amount={payment.amount + payment.repayAmount}
-                role="neutral"
-            />
+        <MoneySpan amount={payment.repayAmount} role="repay" />
+            <MoneySpan amount={payment.amount} role="neutral" />
         {/if}
     </div>
 </div>

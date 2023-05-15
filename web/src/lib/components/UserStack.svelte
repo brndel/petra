@@ -1,5 +1,4 @@
 <script lang="ts">
-    import type { User } from "$lib/data_types";
     import UserView from "./UserView.svelte";
 
     export let userNames: string[];

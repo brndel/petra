@@ -4,6 +4,7 @@ mod request;
 mod tables;
 mod web;
 mod util;
+mod migrate;
 
 pub use error::Error;
 
@@ -16,13 +17,10 @@ use tables::{
 };
 use web_server::HttpServer;
 
-use crate::{
-  foo_data::insert_foo,
-  tables::{
+use crate::{tables::{
     category::CategoryGroup,
-    rule::{Rule, RuleCategoryLink}, tink_token::{TinkToken, TinkPayment},
-  },
-};
+    rule::{Rule, RuleCategoryLink, RuleKeyword}, tink_token::{TinkToken, TinkPayment},
+  }, web::tink_secret::get_tink_client_id};
 
 fn main() {
   let port = 8187;
@@ -36,11 +34,13 @@ fn main() {
   database.create::<PaymentCategoryLink>().unwrap();
   database.create::<PaymentUserLink>().unwrap();
   database.create::<Rule>().unwrap();
+  database.create::<RuleKeyword>().unwrap();
   database.create::<RuleCategoryLink>().unwrap();
   database.create::<TinkToken>().unwrap();
   database.create::<TinkPayment>().unwrap();
 
-  insert_foo(&database);
+  get_tink_client_id();
+  // migrate::migrate(&database);
 
   let server = HttpServer::new().not_found(Box::new(move |req, _| {
     web::handle(req, &database).unwrap_or_else(|e| e.into())

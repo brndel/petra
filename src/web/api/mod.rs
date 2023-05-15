@@ -4,7 +4,7 @@ mod month_index;
 mod payment;
 mod rule;
 mod user;
-mod tink;
+pub mod tink;
 
 pub use category::get_categories;
 pub use payment::get_payments;

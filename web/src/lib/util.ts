@@ -1,4 +1,5 @@
-import type { Payment, User } from "./data_types";
+import type { EditablePayment } from "./data_types";
+import type { Payment, TinkImportInfo, User } from "./data_types";
 
 
 export function calculateRepay(payment: { amount: number; users: User[] }, user: User | null | undefined): number {
@@ -16,7 +17,7 @@ export function calculateRepay(payment: { amount: number; users: User[] }, user:
   return -repay;
 }
 
-export function paymentHasError(payment: {name: string, amount: number, users: User[]}): boolean {
+export function paymentHasError(payment: EditablePayment): boolean {
   return paymentAmountHasError(payment) || paymentUsersHasError(payment) || paymentNameHasError(payment);
 }
 
@@ -24,8 +25,8 @@ export function paymentNameHasError(payment: {name: string}): boolean {
   return payment.name.trim().length === 0;
 }
 
-export function paymentAmountHasError(payment: {amount: number}): boolean {
-  return payment.amount === 0;
+export function paymentAmountHasError(payment: EditablePayment): boolean {
+  return payment.amount === 0 && payment.importInfo === undefined;
 }
 
 

@@ -1,15 +1,26 @@
 mod api;
 mod file;
 
+pub use api::tink::tink_secret;
+
 use std::path::Path;
 
 use base64::{engine::general_purpose, Engine};
 use data::{query::SelectQuery, Database};
+use sha256::digest;
 use web_server::Response;
 
 use crate::{request::Method, tables::user::User, Error, Request};
 
 use self::{api::handle_api, file::handle_file};
+
+pub fn convert_to_username(name: &str) -> String {
+  name.to_lowercase().replace(' ', "_")
+}
+
+pub fn get_auth_hash(username: &str, password: &str) -> String {
+  digest(format!("{}:{}", username, password).as_str())
+}
 
 pub fn handle(request: web_server::Request, database: &Database) -> Result<Response, Error> {
   let mut path_str = request.get_path();
@@ -45,10 +56,15 @@ pub fn create_request<'a>(
     let auth = header.strip_prefix("Basic ")?;
     let bytes = general_purpose::STANDARD.decode(auth).ok()?;
     let auth = String::from_utf8(bytes).ok()?;
-    let auth_hash = sha256::digest(auth.as_str());
-    let mut auth_name = auth.split(':').nth(0)?.to_owned();
-    auth_name = auth_name.to_lowercase().replace(" ", "_");
+    let parts: Vec<&str> = auth.split(':').collect();
 
+    let auth_name = convert_to_username(parts.get(0)?);
+    let auth_password = parts.get(1)?;
+
+    let auth_hash = get_auth_hash(&auth_name, &auth_password);
+
+    // println!("hash: '{}'", auth_hash);
+    
     SelectQuery::new().filter(User::name().eq(auth_name).and(User::auth_hash().eq(auth_hash))).get_first(database)
   }
 
@@ -70,7 +86,7 @@ pub fn create_request<'a>(
 }
 
 fn handle_request(request: &Request) -> Result<Response, Error> {
-  println!("{request:?}");
+  // println!("{request:?}");
   let response = handle_api(request).or_else(|| handle_file(request));
 
   response.unwrap_or_else(|| Err(Error::NotFound))

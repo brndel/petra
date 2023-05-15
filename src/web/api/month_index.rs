@@ -49,15 +49,17 @@ pub fn get_month_index(request: &Request) -> Result<String, Error> {
       months.get_mut(&month).unwrap()
     };
 
-    if payment.amount > 0 {
-      month_result.positive += payment.amount;
-      sum_month.positive += payment.amount;
-    } else if payment.amount < 0 {
-      month_result.negative += payment.amount;
-      sum_month.negative += payment.amount;
+    if payment.owner_id == request.user_id {
+      if payment.amount > 0 {
+        month_result.positive += payment.amount;
+        sum_month.positive += payment.amount;
+      } else if payment.amount < 0 {
+        month_result.negative += payment.amount;
+        sum_month.negative += payment.amount;
+      }
     }
 
-    let repay = payment.get_repay(request.user_id, request.database);
+    let (amount, repay) = payment.get_repay(request.user_id, request.database);
 
     month_result.repay += repay;
     sum_month.repay += repay;

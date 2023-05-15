@@ -4,7 +4,7 @@ use crate::{Request, tables::tink_token::TinkToken};
 
 pub mod payment;
 pub mod token;
-mod tink_secret;
+pub mod tink_secret;
 mod transaction;
 
 fn get_token(request: &Request) -> Option<TinkToken> {

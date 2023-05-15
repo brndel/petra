@@ -1,5 +1,6 @@
 <script lang="ts">
-    import { currentUser, type LoaderMethod } from "$lib/db";
+    import type { LoaderMethod } from "$lib/db/loader";
+    import { currentUser } from "$lib/db/user";
     import DbLoader from "./DBLoader.svelte";
     import Icon from "./Icon.svelte";
     import UserView from "./UserView.svelte";

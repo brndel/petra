@@ -142,7 +142,9 @@ fn insert_payment(
     .insert(PaymentInsert {
       name,
       amount,
-      timestamp,
+      original_amount: amount,
+      timestamp: timestamp.clone(),
+      original_timestamp: timestamp,
       owner_id,
     })
     .unwrap();

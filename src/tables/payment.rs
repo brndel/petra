@@ -5,7 +5,7 @@ use data::{
 };
 use serde::Serialize;
 
-use crate::{Error, util::ExactMonth};
+use crate::{Error, util::ExactMonth, Request};
 
 use super::{category::Category, user::User};
 
@@ -15,8 +15,10 @@ pub struct Payment {
   pub id: i64,
   pub name: String,
   pub amount: i64,
+  pub original_amount: i64,
   // The timestamp of the payment in the rfc3339 format (can include timezones)
   pub timestamp: String,
+  pub original_timestamp: String,
   #[foreign(User)]
   #[on_delete("restrict")]
   pub owner_id: i64,
@@ -26,7 +28,8 @@ pub struct Payment {
 pub struct PaymentResponse {
   id: i64,
   name: String,
-  amount: i64,
+  real_amount: i64,
+  user_amount: i64,
   repay_amount: i64,
   timestamp: DateTime<FixedOffset>,
   owner_id: i64,
@@ -46,7 +49,7 @@ impl Payment {
       .ok_or(Error::Database)
   }
 
-  pub fn get_payments_date(
+  pub fn get_payments_by_date(
     database: &Database,
     user_id: i64,
     month: ExactMonth
@@ -63,14 +66,15 @@ impl Payment {
       .ok_or(Error::Database)
   }
 
-  pub fn into_response(self, database: &Database) -> PaymentResponse {
-    let users = self.get_users(database);
-    let repay_amount = self.get_repay_users(self.owner_id, &users);
-    let categories = self.get_categories(database);
+  pub fn into_response(self, request: &Request) -> PaymentResponse {
+    let users = self.get_users(request.database);
+    let (user_amount, repay_amount) = self.get_repay_users(request.user_id, &users);
+    let categories = self.get_categories(request.database);
     PaymentResponse {
       id: self.id,
       name: self.name,
-      amount: self.amount,
+      real_amount: self.amount,
+      user_amount,
       repay_amount,
       timestamp: DateTime::parse_from_rfc3339(&self.timestamp).unwrap_or_default(),
       owner_id: self.owner_id,
@@ -91,27 +95,32 @@ impl Payment {
       .unwrap_or_default()
   }
 
-  pub fn get_repay(&self, user_id: i64, database: &Database) -> i64 {
+  pub fn get_repay(&self, user_id: i64, database: &Database) -> (i64, i64) {
     let users = self.get_users(database);
 
     self.get_repay_users(user_id, &users)
   }
 
-  fn get_repay_users(&self, user_id: i64, users: &Vec<i64>) -> i64 {
+  fn get_repay_users(&self, user_id: i64, users: &Vec<i64>) -> (i64, i64) {
     if users.is_empty() {
-      return 0;
+      return (0, 0);
     }
+
     let amount_per_user = self.amount / users.len() as i64;
-    let mut repay = if self.owner_id == user_id {
-      -self.amount
-    } else {
-      0
-    };
-    if users.contains(&user_id) {
+    let is_owner = self.owner_id == user_id;
+    let is_user = users.contains(&user_id);
+
+    let mut amount = 0;
+    if is_owner {
+      amount = self.amount;
+    }
+
+    let mut repay = -amount;
+    if is_user {
       repay += amount_per_user;
     }
 
-    repay
+    (amount, repay)
   }
 }
 

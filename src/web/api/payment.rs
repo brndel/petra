@@ -22,10 +22,10 @@ pub fn get_payments(request: &Request) -> Result<String, Error> {
     .parse()
     .map_err(|_| Error::BadRequest("Invalid 'month' format".to_string()))?;
 
-  let payments = Payment::get_payments_date(request.database, request.user_id, month)?;
+  let payments = Payment::get_payments_by_date(request.database, request.user_id, month)?;
   let payments: Vec<_> = payments
     .into_iter()
-    .map(|e| e.into_response(request.database))
+    .map(|e| e.into_response(request))
     .collect();
 
   serialize(&payments)
@@ -110,7 +110,9 @@ fn insert_payment(
     .insert(PaymentInsert {
       name: name.clone(),
       amount: data.amount,
-      timestamp: data.timestamp,
+      original_amount: data.amount,
+      timestamp: data.timestamp.clone(),
+      original_timestamp: data.timestamp,
       owner_id,
     })
     .ok_or_else(|| vec![PaymentInsertError::InvalidPayment(name, owner_id)])?;

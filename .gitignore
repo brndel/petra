@@ -1,3 +1,4 @@
 /target
-data.sqlite
-/src/web/api/tink/tink_secret.rs
+/old-data
+data*.sqlite
+tink.secret

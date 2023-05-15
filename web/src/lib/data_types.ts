@@ -21,17 +21,19 @@ export type Category = {
 export type Rule = {
     id: number,
     name: string,
-    paymentRename: string,
     categories: Category[]
+    keywords: string[],
     shareRule: boolean | null,
 }
 
 export type Payment = {
     id: number,
     name: string,
+    realAmount: number,
     amount: number,
     repayAmount: number,
     timestamp: Date,
+    isOwner: boolean,
     owner: User,
     users: User[],
     categories: Category[]
@@ -43,9 +45,9 @@ export type EditablePayment = {
     date: Date,
     users: User[],
     categories: Category[],
-    rule: Rule | null,
+    rule?: Rule,
 
-    importInfo: EditablePaymentImportInfo | undefined,
+    importInfo?: EditablePaymentImportInfo,
 }
 
 export type EditablePaymentImportInfo = {
@@ -62,6 +64,7 @@ export type MonthData = {
 }
 
 export type TinkImportInfo = {
+    new: number,
     pending: number,
     listed: number
 }

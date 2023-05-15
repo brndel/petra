@@ -20,6 +20,8 @@
 
   export let toggle: (value: T) => void;
 
+  export let menuPosition: "left" | "right" = "right";
+
   let hovered = false;
   let searchbarElement: HTMLInputElement | null | undefined;
 
@@ -140,7 +142,7 @@
     {/if}
   </button>
   {#if hovered}
-    <div class="menu">
+    <div class="menu {menuPosition}">
       <input
         type="text"
         bind:value={filterQuery}
@@ -184,7 +186,7 @@
   {/if}
 </div>
 
-<style>
+<style lang="scss">
   .menu-button {
     --user-size: 24px;
     position: relative;
@@ -205,13 +207,20 @@
     z-index: 1;
     position: absolute;
     top: 0%;
-    left: calc(100% + var(--small));
     display: flex;
     flex-direction: column;
     align-items: stretch;
     background-color: var(--surface-light);
     border-radius: var(--small);
     box-shadow: var(--button-shadow);
+    
+    &.left {
+      right: calc(100% + var(--small));
+    }
+
+    &.right {
+      left: calc(100% + var(--small));
+    }
   }
 
   .menu::before {
