@@ -24,6 +24,16 @@ let categoryGroupMap = readable<Map<number, CategoryGroup> | undefined>(undefine
     });
 });
 
+export let categoryGroupArray = readable<CategoryGroup[]>([], (set) => {
+    categoryGroupMap.subscribe((categoryGroupMap) => {
+        if (categoryGroupMap === undefined) {
+            set([]);
+        } else {
+            set(Array.from(categoryGroupMap.values()));
+        }
+    })
+});
+
 export let categoryMap = readable<Map<number, Category> | undefined>(undefined, (set) => {
     multiSubscribe2([rawCategories, categoryGroupMap], set, ([rawCategories, categoryGroupMap]) => {
         let map = rawToMapId(rawCategories, (raw) => {

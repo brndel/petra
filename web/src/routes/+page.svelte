@@ -29,6 +29,7 @@
     {#if overview != undefined}
         <MonthOverview month={overview} />
     {/if}
+    <div class="divider" />
     <div class="col scroll">
         {#each $monthArray as month}
             <MonthButton {month} />

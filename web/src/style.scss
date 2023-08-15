@@ -169,3 +169,62 @@ select {
 .error {
     outline: 2px solid var(--error);
 }
+
+.divider {
+    min-width: 4px;
+    min-height: 4px;
+    border-radius: 4px;
+
+    background-color: var(--surface-light);
+    align-self: stretch;
+}
+
+.card {
+    background-color: var(--surface);
+    border: none;
+    border-radius: var(--small);
+    padding: var(--small);
+    color: var(--surface-on);
+    font-weight: bold;
+
+    &.light {
+        background-color: var(--surface-light);
+    }
+}
+
+button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--small);
+    font-weight: bold;
+    border: none;
+    border-radius: var(--small);
+    padding: var(--small);
+    cursor: pointer;
+
+    transition: background-color 250ms ease-in-out;
+    
+    background-color: var(--surface);
+    color: var(--surface-on);
+    &:hover {
+        background-color: var(--surface-light);
+    }
+
+    &.primary {
+        background-color: var(--primary);
+        color: var(--primary-on);
+        &:hover {
+            background-color: var(--primary-light);
+        }
+    }
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+a {
+    color: var(--primary-light);
+}

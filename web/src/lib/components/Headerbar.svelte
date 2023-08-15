@@ -14,8 +14,11 @@
     <DbLoader data={loader_data} />
     <div class="spacer" />
 
-    <a href="add"><Icon icon="add" tooltip="Neu" tooltipLocation="bottom"/></a>
+    <a href="add"><Icon icon="paymentsadd" tooltip="Neue Zahlungen" tooltipLocation="bottom"/></a>
+    <div class="divider"></div>
     <a href="users"><Icon icon="group" tooltip="Benutzer" tooltipLocation="bottom"/></a>
+    <a href="categories"><Icon icon="category" tooltip="Kategorien" tooltipLocation="bottom"/></a>
+    <a href="rules"><Icon icon="smart_toy" tooltip="Regeln" tooltipLocation="bottom"/></a>
 
     {#if user !== undefined && user !== null}
         <UserView userName={user.userName} />
@@ -34,6 +37,7 @@
         background-color: var(--button-light);
         color: var(--button-on);
         text-decoration: none;
-        border-radius: 50%;
+        border-radius: 32px;
+        padding: 8px;
     }
 </style>

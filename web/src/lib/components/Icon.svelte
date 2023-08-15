@@ -1,7 +1,7 @@
 <script lang="ts">
     export let icon: string;
     export let tooltip: string | null = null;
-    export let tooltipLocation: "top" | "bottom" = "top";
+    export let tooltipLocation: "top" | "bottom" | "left" | "right" = "top";
 </script>
 
 <span
@@ -16,6 +16,7 @@
         position: relative;
         display: flex;
         justify-content: center;
+        align-items: center;
 
         &[data-tooltip] {
             border-radius: 4px;
@@ -35,14 +36,14 @@
                 transform: scale(0);
                 opacity: 0;
 
-                transition-property: transform, opacity, bottom, top;
+                transition-property: transform, opacity, bottom, top, left, right;
                 transition-duration: 200ms;
                 transition-timing-function: cubic-bezier(0.5, 0, 0.5, 1);
             }
             &:hover {
                 background-color: var(--primary);
                 color: var(--primary-on);
-                border-radius: 50%;
+                border-radius: 16px;
                 box-shadow: 0 0 0 4px var(--primary);
                 transition-delay: 250ms;
                 &::after {
@@ -70,6 +71,26 @@
 
             &:hover::after {
                 top: calc(100% + var(--small));
+            }
+        }
+
+        &[data-tooltip-location="left"] {
+            &::after {
+                right: 50%;
+            }
+
+            &:hover::after {
+                right: calc(100% + var(--small));
+            }
+        }
+
+        &[data-tooltip-location="right"] {
+            &::after {
+                left: 50%;
+            }
+
+            &:hover::after {
+                left: calc(100% + var(--small));
             }
         }
     }

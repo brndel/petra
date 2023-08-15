@@ -17,7 +17,7 @@ use crate::{
 };
 
 use self::{
-  category::get_category_groups, current_user::get_current_user, month_index::get_month_index,
+  category::{get_category_groups, add_category, add_category_group}, current_user::get_current_user, month_index::get_month_index,
   payment::post_payments, rule::get_rules, user::{get_users, add_user}, tink::{token::{get_tink_token_callback, get_tink_token}, payment::get_tink_payments},
 };
 
@@ -52,6 +52,8 @@ fn handle_methods(method: &str, request: &Request) -> Result<Response, Error> {
     Post => match method {
       "payment" => post_payments(request),
       "user" => add_user(request),
+      "category" => add_category(request),
+      "category_group" => add_category_group(request),
       _ => Err(Error::NotFound),
     }?,
     Delete => match method {

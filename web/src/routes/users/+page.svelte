@@ -48,13 +48,13 @@
             <span>{user.name}</span>
             {#if user === $currentUser}
                 <div class="spacer" />
-                <Icon icon="person" />
+                <Icon icon="person" tooltip="Du" tooltipLocation="left"/>
             {/if}
         </div>
     {/each}
     <div class="spacer" />
     <button class="card row center" on:click={openUserMenu}>
-        <Icon icon="add" />
+        <Icon icon="add"/>
         Nutzer hinzufügen
     </button>
 </div>
@@ -84,32 +84,12 @@
             />
         </div>
         <button
-            class="card row center"
+        class="primary"
             disabled={userData.password.length < 3 || userData.password !== userData.passwordRepeat}
             on:click={addUser}
         >
             <Icon icon="add" />
-            {userData.displayName} hinzufügen
+            Hinzufügen
         </button>
     </div>
 {/if}
-
-<style lang="scss">
-    .card {
-        background-color: var(--surface);
-        border: none;
-        border-radius: var(--small);
-        padding: var(--small);
-        color: var(--surface-on);
-        font-weight: bold;
-    }
-
-    button {
-        cursor: pointer;
-    }
-
-    button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-</style>
