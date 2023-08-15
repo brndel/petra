@@ -28,6 +28,7 @@
     --positive-on: #ffffff;
 
     --small: 8px;
+    --medium: 16px;
     --user-size: 42px;
 }
 
@@ -110,6 +111,10 @@ header {
     &.space {
         justify-content: space-between;
     }
+
+    &.scroll {
+        overflow-y: scroll;
+    }
 }
 
 .side {
@@ -142,6 +147,7 @@ span.center,
 
 input[type=text],
 input[type=number],
+input[type=password],
 select {
     border: none;
     background-color: var(--surface-dark);

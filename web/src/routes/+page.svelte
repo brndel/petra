@@ -25,13 +25,15 @@
     ]}
 />
 
-<div class="col side">
+<div class="col side scroll">
     {#if overview != undefined}
         <MonthOverview month={overview} />
     {/if}
-    {#each $monthArray as month}
-        <MonthButton {month} />
-    {/each}
+    <div class="col scroll">
+        {#each $monthArray as month}
+            <MonthButton {month} />
+        {/each}
+    </div>
 </div>
 <div class="col main">
     {#if selected !== null}
@@ -46,7 +48,7 @@
     {/if}
 </div>
 {#if selected !== null}
-    <div class="col side">
+    <div class="col side scroll">
         <MonthOverview month={selected} />
     </div>
 {/if}

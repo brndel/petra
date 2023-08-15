@@ -15,6 +15,7 @@
     <div class="spacer" />
 
     <a href="add"><Icon icon="add" tooltip="Neu" tooltipLocation="bottom"/></a>
+    <a href="users"><Icon icon="group" tooltip="Benutzer" tooltipLocation="bottom"/></a>
 
     {#if user !== undefined && user !== null}
         <UserView userName={user.userName} />
