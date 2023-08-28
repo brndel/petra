@@ -4,9 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{tables::tink_token::TinkToken, web::api::{serialize, tink::tink_secret::{get_tink_client_id, get_tink_client_secret}}, Error, Request};
 
-use super::{
-  get_token,
-};
+use super::get_token;
 
 pub fn get_tink_token_callback(request: &Request) -> Result<String, Error> {
   println!("TINK TOKEN CALLBACK");

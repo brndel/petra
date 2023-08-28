@@ -1,7 +1,5 @@
 mod config;
 mod error;
-mod foo_data;
-mod migrate;
 mod request;
 mod tables;
 mod util;
