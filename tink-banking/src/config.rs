@@ -1,4 +1,4 @@
-use std::{path::Path, fs, sync::Mutex};
+use std::{env, fs, path::Path, sync::Mutex};
 
 use serde::{Deserialize, Serialize};
 
@@ -10,7 +10,7 @@ pub struct TinkConfig {
 
 static CONFIG: Mutex<Option<TinkConfig>> = Mutex::new(None);
 
-pub fn load_secret_from_file<P: AsRef<Path>>(path: P) {
+pub fn load_config_from_file<P: AsRef<Path>>(path: P) {
     let mut config = CONFIG.lock().unwrap();
     if config.is_some() {
         panic!("tink config already loaded");
@@ -22,6 +22,18 @@ pub fn load_secret_from_file<P: AsRef<Path>>(path: P) {
         Ok(cfg) => *config = cfg,
         Err(err) => panic!("could not parse tink file '{}'", err),
     }
+}
+
+pub fn load_config_from_env() {
+    let mut config = CONFIG.lock().unwrap();
+    if config.is_some() {
+        panic!("tink config already loaded");
+    }
+
+    let id = env::var("TINK_ID").expect("'TINK_ID' not found in env");
+    let secret = env::var("TINK_SECRET").expect("'TINK_SECRET' not found in env");
+
+    *config = Some(TinkConfig { id, secret });
 }
 
 pub fn get_config() -> TinkConfig {

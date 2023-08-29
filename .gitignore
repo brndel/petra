@@ -1,4 +1,4 @@
 /target
 /old-data
 data*.sqlite
-tink.secret
+tink.toml

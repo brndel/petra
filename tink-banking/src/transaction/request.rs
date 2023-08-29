@@ -1,6 +1,8 @@
 use serde::Deserialize;
 
-use crate::{month::TinkMonth, DATE_FORMAT, transaction::response_transaction::ResponseTransaction};
+use crate::{
+    month::TinkMonth, transaction::response_transaction::ResponseTransaction, DATE_FORMAT,
+};
 
 use super::Transaction;
 
@@ -8,7 +10,7 @@ static TRANSACTIONS_URL: &str = "https://api.tink.com/data/v2/transactions";
 
 pub enum TransactionError {
     BadMonth,
-    Parsing
+    Parsing,
 }
 
 #[derive(Default)]
@@ -76,7 +78,11 @@ fn fetch_transactions(
         Some(response.next_page_token)
     };
 
-    let mut transactions = response.transactions.into_iter().filter_map(|transaction| transaction.try_into().ok()).collect();
+    let mut transactions = response
+        .transactions
+        .into_iter()
+        .filter_map(|transaction| transaction.try_into().ok())
+        .collect();
 
     fetch_data.transactions.append(&mut transactions);
 

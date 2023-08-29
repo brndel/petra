@@ -1,7 +1,7 @@
 use chrono::{Duration, Local, NaiveDateTime};
 use serde::Deserialize;
 
-use crate::secret::get_config;
+use crate::config::get_config;
 
 static AUTH_URL: &str = "https://api.tink.com/api/v1/oauth/token";
 

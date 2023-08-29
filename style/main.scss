@@ -1,0 +1,84 @@
+:root {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+
+    --background: #202020;
+    --background-on: #ffffff;
+    --background-dark: #1b1b1b;
+    --background-light: #333333;
+
+    --surface: #2c2c2c;
+    --surface-on: #ffffff;
+    --surface-dark: #1d1d1d;
+    --surface-light: #3f3f3f;
+
+    --primary: #003cff;
+    --primary-on: #ffffff;
+    --primary-dark: #0032d6;
+    --primary-light: #3363ff;
+
+    --button: #353535;
+    --button-on: #ffffff;
+    --button-dark: #252525;
+    --button-light: #3f3f3f;
+    --button-shadow: 4px 4px 8px 4px rgba(15, 15, 15, 0.425);
+
+    --error: #ff0000;
+    --error-on: #ffffff;
+    --positive: #00aa00;
+    --positive-on: #ffffff;
+
+    --small: 8px;
+    --medium: 16px;
+}
+
+html {
+    background-color: var(--background);
+    color: var(--background-on);
+    padding: 0;
+    margin: 0;
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+header {
+    background-color: var(--surface);
+    color: var(--surface-on);
+    padding: var(--small);
+}
+
+a {
+    background-color: var(--button);
+    color: var(--button-on);
+
+    text-decoration: none;
+    font-weight: bold;
+
+    padding: var(--small) var(--medium);
+    border-radius: var(--small);
+}
+
+.row, .col {
+    display: flex;
+    gap: var(--small);
+}
+
+.row {
+    flex-direction: row;
+}
+
+.col {
+    flex-direction: col;
+}
+
+.spacer {
+    flex: 1;
+}
+
+main {
+    display: grid;
+}
