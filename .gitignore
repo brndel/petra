@@ -1,4 +1,5 @@
 /target
 /old-data
-data*.sqlite
+*.sqlite
+*.meta.toml
 tink.toml

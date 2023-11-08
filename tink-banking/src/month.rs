@@ -1,8 +1,8 @@
 use chrono::NaiveDate;
 
 pub struct TinkMonth {
-    year: i32,
-    month: u32,
+    pub year: i32,
+    pub month: u32,
 }
 
 impl TinkMonth {

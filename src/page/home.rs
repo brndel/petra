@@ -1,11 +1,14 @@
 use leptos::*;
 
+
 #[component]
-pub fn Home(cx: Scope) -> impl IntoView {
+pub fn HomePage() -> impl IntoView {
     view! {
-        cx,
-        <h2>
-            "Hello Home"
-        </h2>
+        <main>
+            <div class="card">
+                <p>"Hello 👋"</p>
+            </div>
+
+        </main>
     }
 }

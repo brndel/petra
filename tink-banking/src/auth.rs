@@ -1,28 +1,34 @@
-use chrono::{Duration, Local, NaiveDateTime};
+use chrono::{Duration, Local, DateTime, FixedOffset};
 use serde::Deserialize;
 
 use crate::config::get_config;
 
 static AUTH_URL: &str = "https://api.tink.com/api/v1/oauth/token";
 
+#[derive(Debug)]
 pub struct AuthToken {
     pub token: String,
-    pub expires_timestamp: NaiveDateTime,
+    pub expires_timestamp: DateTime<FixedOffset>,
 }
 
 pub fn get_auth_token(auth_code: &str) -> Option<AuthToken> {
     let config = get_config();
 
+    let body = format!(
+        "code={}&client_id={}&client_secret={}&grant_type={}",
+        auth_code,
+        config.id,
+        config.secret,
+        "authorization_code"
+    );
+
     let request = minreq::post(AUTH_URL)
-        .with_param("code", auth_code)
-        .with_param("client_id", config.id)
-        .with_param("client_secret", config.secret)
-        .with_param("grant_type", "autorization_code")
+        .with_body(body)
         .with_header("Content-Type", "application/x-www-form-urlencoded");
 
     let response = request.send().ok()?;
 
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Debug)]
     struct Response {
         access_token: String,
         expires_in: i64,
@@ -34,6 +40,6 @@ pub fn get_auth_token(auth_code: &str) -> Option<AuthToken> {
 
     Some(AuthToken {
         token: response.access_token,
-        expires_timestamp: expires.naive_utc(),
+        expires_timestamp: expires.fixed_offset(),
     })
 }

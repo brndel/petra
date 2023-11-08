@@ -1,6 +1,6 @@
 mod request;
 mod transaction;
-mod response_transaction;
+mod api_transaction;
 
-pub use transaction::Transaction;
+pub use transaction::{Transaction, TransactionStatus, Counterparties, Counterparty};
 pub use request::get_transactions;

@@ -1,8 +1,6 @@
 use serde::Deserialize;
 
-use crate::{
-    month::TinkMonth, transaction::response_transaction::ResponseTransaction, DATE_FORMAT,
-};
+use crate::{month::TinkMonth, transaction::api_transaction::ApiTransaction, DATE_FORMAT};
 
 use super::Transaction;
 
@@ -67,10 +65,13 @@ fn fetch_transactions(
     #[serde(rename_all = "camelCase")]
     struct Response {
         next_page_token: String,
-        transactions: Vec<ResponseTransaction>,
+        transactions: Vec<ApiTransaction>,
     }
 
-    let response: Response = response.json().ok()?;
+    let response: Response = match response.json() {
+        Ok(response) => response,
+        Err(err) => {dbg!(err); return None}
+    };
 
     fetch_data.page_token = if response.next_page_token.is_empty() {
         None
