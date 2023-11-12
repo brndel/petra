@@ -64,6 +64,10 @@ a {
         align-items: center;
     }
 
+    &.center-j {
+        justify-content: center;
+    }
+
     &.start {
         align-items: start;
     }
@@ -118,7 +122,7 @@ body {
         padding: var(--small);
         overflow-y: scroll;
 
-        &>.card {
+        & .card {
             background-color: var(--surface-light);
             color: var(--surface-on);
         }
@@ -184,14 +188,18 @@ main {
 }
 
 @keyframes scale {
-    from {
+    0% {
         transform: scale(0.9);
         opacity: 0;
     }
 
-    to {
+    99% {
         transform: scale(1.0);
         opacity: 1;
+    }
+
+    100% {
+        opacity: unset;
     }
 }
 
@@ -219,7 +227,7 @@ main {
 
 .load-anim>* {
     animation: scale 200ms ease-out;
-    animation-fill-mode: both;
+    animation-fill-mode: backwards;
     animation-delay: 0ms;
 
 
@@ -264,6 +272,10 @@ input {
     .card>& {
         background-color: var(--surface);
     }
+}
+
+input::-webkit-inner-spin-button {
+    background-color: orange;
 }
 
 input:invalid,
@@ -431,6 +443,12 @@ h6 {
     overflow: hidden;
     font-size: 8px;
     font-weight: bold;
+
+    &.big {
+        width: 64px;
+        height: 64px;
+        font-size: 16px;
+    }
 }
 
 .amount {

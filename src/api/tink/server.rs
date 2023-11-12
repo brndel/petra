@@ -1,14 +1,18 @@
 use chrono::{DateTime, FixedOffset, Local};
-use mensula::Table;
 use mensula::query::SelectQuery;
+use mensula::{Database, Table};
 use mensula_key::Key;
-use tink_banking::{get_auth_token, get_transactions, AuthToken, TinkMonth, TransactionStatus};
+use tink_banking::{
+    get_auth_token, get_transactions, AuthToken, TinkMonth, Transaction, TransactionStatus,
+};
 
 use crate::{db::get_db, util::month::MonthDate};
 
 use crate::api::payment::server::Payment;
-use crate::api::tink::{TinkPaymentResponse, AddTinkPayment};
+use crate::api::tink::{TinkPayment as ResponseTinkPayment, TinkPaymentData};
 use crate::api::user::server::User;
+
+use super::TinkPaymentStatus;
 
 #[derive(Table)]
 pub struct TinkPayment {
@@ -19,7 +23,9 @@ pub struct TinkPayment {
     name: String,
     amount: i64,
     timestamp: String,
-    hash: String,
+    #[foreign(User)]
+    #[on_delete("cascade")]
+    owner: Key,
 }
 
 #[derive(Table)]
@@ -81,8 +87,8 @@ fn get_timestamp_if_valid(token: &TinkToken) -> Option<DateTime<FixedOffset>> {
     }
 }
 
-pub fn get_payments(user: Key, month: MonthDate) -> Option<TinkPaymentResponse> {
-    let token = get_token(user)?;
+pub fn get_payments(user: Key, month: MonthDate) -> Option<Vec<ResponseTinkPayment>> {
+    let token = get_token(user.clone())?;
 
     let month = TinkMonth {
         year: month.year,
@@ -91,41 +97,49 @@ pub fn get_payments(user: Key, month: MonthDate) -> Option<TinkPaymentResponse> 
 
     let transactions = get_transactions(&token.token, &month).ok()?;
 
-    let mut new_payments = Vec::new();
-    let mut pending_payments = Vec::new();
-    let mut added_payments = Vec::new();
+    let mut payments = Vec::new();
 
     let db = get_db();
 
     for transaction in transactions {
-        if transaction.status != TransactionStatus::Booked {
-            pending_payments.push(transaction.into());
-            continue;
-        }
+        let status = get_status(&transaction, &user, &db);
 
-        if let Some(key) = SelectQuery::new().filter(TinkPayment::hash().eq(transaction.ref_hash.clone())).get_first::<Key>(&db) {
-            added_payments.push((transaction.into(), key));
-            continue;
-        }
-
-        new_payments.push(transaction.into());
+        payments.push((transaction, status).into());
     }
 
-    Some(TinkPaymentResponse {
-        new_payments,
-        pending_payments,
-        added_payments,
-    })
+    Some(payments)
 }
 
-pub fn add_tink_payment(payment_id: Key, payment: AddTinkPayment) -> Option<Key> {
+fn get_status(transaction: &Transaction, user: &Key, db: &Database) -> TinkPaymentStatus {
+    if transaction.status != TransactionStatus::Booked {
+        return TinkPaymentStatus::Pending;
+    }
+
+    let timestamp = transaction.date.date_naive().format("%Y-%m-%dT%%").to_string();
+
+    let payment = SelectQuery::new()
+        .filter(
+            TinkPayment::amount()
+                .eq(transaction.amount)
+                .and(TinkPayment::timestamp().like(timestamp))
+                .and(TinkPayment::owner().eq(user.clone())),
+        )
+        .get_first::<Key>(&db);
+
+    if payment.is_some() {
+        TinkPaymentStatus::AlreadyAdded
+    } else {
+        TinkPaymentStatus::New
+    }
+}
+
+pub fn add_tink_payment(payment_id: Key, owner: Key, payment: TinkPaymentData) -> Option<Key> {
     let db = get_db();
 
-    let AddTinkPayment {
+    let TinkPaymentData {
         name,
         amount,
         timestamp,
-        hash
     } = payment;
 
     db.insert(TinkPayment {
@@ -133,6 +147,25 @@ pub fn add_tink_payment(payment_id: Key, payment: AddTinkPayment) -> Option<Key>
         name,
         amount,
         timestamp: timestamp.to_rfc3339(),
-        hash,
+        owner,
+    })
+}
+
+pub fn get_payment_data(id: Key, db: Option<&Database>) -> Option<TinkPaymentData> {
+    let mutex;
+    let db = match db {
+        Some(db) => db,
+        None => {
+            mutex = get_db();
+            &mutex
+        }
+    };
+
+    db.get::<TinkPayment>(id).and_then(|payment| {
+        Some(TinkPaymentData {
+            name: payment.name,
+            amount: payment.amount,
+            timestamp: DateTime::parse_from_rfc3339(&payment.timestamp).ok()?,
+        })
     })
 }

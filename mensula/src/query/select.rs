@@ -1,8 +1,9 @@
 use std::{fmt::Display, marker::PhantomData};
 
+use mensula_key::Key;
 use sqlite::{State, Statement};
 
-use crate::{filter::Filter, table::Readable, Column, Database, Table};
+use crate::{filter::Filter, table::Readable, Column, Database, Table, Link};
 
 pub enum Ordering {
   Ascending,
@@ -35,6 +36,10 @@ impl<T: Table> SelectQuery<T> {
       ordering: None,
       phantom: PhantomData,
     }
+  }
+
+  pub fn link<U: Table, L: Link<T> + Link<U> + Table>(key: Key) -> Self {
+    SelectQuery::new().filter(T::primary_column().link::<L, U>(key))
   }
 
   // Builders

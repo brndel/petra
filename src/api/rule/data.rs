@@ -47,6 +47,12 @@ pub enum ShareRule {
     Choose,
 }
 
+impl Default for ShareRule {
+    fn default() -> Self {
+        Self::Choose
+    }
+}
+
 impl From<ShareRule> for i64 {
     fn from(value: ShareRule) -> Self {
         match value {

@@ -21,7 +21,7 @@ struct InnerField<T> {
 }
 
 impl<T: 'static + Clone + PartialEq> Field<T> {
-    pub fn new(value: &T) -> Self {
+    pub fn new(value: T) -> Self {
         Self {
             signal: RwSignal::new(InnerField::new(value)),
         }
@@ -29,10 +29,10 @@ impl<T: 'static + Clone + PartialEq> Field<T> {
 }
 
 impl<T: 'static + Clone> InnerField<T> {
-    fn new(value: &T) -> Self {
+    fn new(value: T) -> Self {
         Self {
             start_value: value.clone(),
-            current_value: value.clone(),
+            current_value: value,
         }
     }
 }
@@ -65,6 +65,15 @@ impl<T1: FieldReset, T2: FieldReset, T3: FieldReset> FieldReset for (T1, T2, T3)
     }
 }
 
+impl<T1: FieldReset, T2: FieldReset, T3: FieldReset, T4: FieldReset> FieldReset for (T1, T2, T3, T4) {
+    fn reset(&self) {
+        self.0.reset();
+        self.1.reset();
+        self.2.reset();
+        self.3.reset();
+    }
+}
+
 // FieldUnchanged
 
 pub trait FieldUnchaged {
@@ -87,6 +96,12 @@ impl<T1: FieldUnchaged, T2: FieldUnchaged> FieldUnchaged for (T1, T2) {
 impl<T1: FieldUnchaged, T2: FieldUnchaged, T3: FieldUnchaged> FieldUnchaged for (T1, T2, T3) {
     fn is_unchanged(&self) -> bool {
         self.0.is_unchanged() && self.1.is_unchanged() && self.2.is_unchanged()
+    }
+}
+
+impl<T1: FieldUnchaged, T2: FieldUnchaged, T3: FieldUnchaged, T4: FieldUnchaged> FieldUnchaged for (T1, T2, T3, T4) {
+    fn is_unchanged(&self) -> bool {
+        self.0.is_unchanged() && self.1.is_unchanged() && self.2.is_unchanged() && self.3.is_unchanged()
     }
 }
 
@@ -134,4 +149,30 @@ impl<T: 'static + Clone> SignalGetUntracked for Field<T> {
         self.signal
             .try_with_untracked(|inner| inner.current_value.clone())
     }
+}
+
+impl<T: 'static + Clone> SignalWith for Field<T> {
+    type Value = T;
+
+    fn with<O>(&self, f: impl FnOnce(&Self::Value) -> O) -> O {
+        self.signal.with(|inner| f(&inner.current_value))
+    }
+
+    fn try_with<O>(&self, f: impl FnOnce(&Self::Value) -> O) -> Option<O> {
+        self.signal.try_with(|inner| f(&inner.current_value))
+    }
+}
+
+impl<T: 'static + Clone> SignalUpdate for Field<T> {
+    type Value = T;
+
+    fn update(&self, f: impl FnOnce(&mut Self::Value)) {
+        self.signal.update(|inner| f(&mut inner.current_value))
+    }
+
+    fn try_update<O>(&self, f: impl FnOnce(&mut Self::Value) -> O)
+        -> Option<O> {
+        self.signal.try_update(|inner| f(&mut inner.current_value))
+    }
+
 }

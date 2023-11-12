@@ -11,18 +11,10 @@ pub use super::data::*;
 use super::server;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
-pub struct AddTinkPayment {
+pub struct TinkPaymentData {
     pub name: String,
     pub amount: i64,
     pub timestamp: DateTime<FixedOffset>,
-    pub hash: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TinkPaymentResponse {
-    pub new_payments: Vec<TinkPayment>,
-    pub pending_payments: Vec<TinkPayment>,
-    pub added_payments: Vec<(TinkPayment, Key)>,
 }
 
 #[server]
@@ -32,11 +24,18 @@ pub async fn tink_get_token_timeout() -> Result<Option<DateTime<FixedOffset>>, S
 }
 
 #[server]
-pub async fn tink_get_payments(month: MonthDate) -> Result<TinkPaymentResponse, ServerFnError> {
+pub async fn tink_get_payments(month: MonthDate) -> Result<Vec<TinkPayment>, ServerFnError> {
     let user = crate::auth::get_user().await?;
 
     server::get_payments(user, month)
         .ok_or_else(|| ServerFnError::ServerError("Could not get payments".to_string()))
+}
+
+#[server]
+pub async fn tink_get_payment_data(id: Key) -> Result<TinkPaymentData, ServerFnError> {
+    // let user = crate::auth::get_user().await?;
+
+    server::get_payment_data(id, None).ok_or_else(||ServerFnError::ServerError("Unkown tink payment id".to_string()))
 }
 
 #[cfg(feature = "ssr")]
@@ -52,7 +51,7 @@ async fn token_callback(req: HttpRequest) -> HttpResponse {
     #[derive(Deserialize)]
     struct Params {
         code: String,
-        // #[serde]
+        // #[serde(rename("credentialsId"))]
         // credentials_id: String,
     }
 

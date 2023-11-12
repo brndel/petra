@@ -2,11 +2,14 @@ use chrono::{DateTime, FixedOffset, Local};
 use leptos::{RwSignal, SignalGet, SignalGetUntracked, SignalWith, SignalWithUntracked};
 use mensula_key::Key;
 
-use crate::{api::{
+use crate::{
+    api::{
         payment::AddPaymentData,
         rule::{Rule, ShareRule},
-        tink::{AddTinkPayment, TinkPayment},
-    }, util::calculated_amount::CalculatedAmount};
+        tink::{TinkPaymentData, TinkPayment, TinkPaymentStatus},
+    },
+    util::calculated_amount::CalculatedAmount,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct EditPayment {
@@ -39,18 +42,20 @@ impl EditPayment {
     }
 
     pub fn is_valid(&self) -> bool {
-        self.amount.with(|amount| amount.is_some())
-            && self.date.with(|date| date.is_some())
-            && AddPaymentData::is_valid_static(&self.name.get(), &self.users.get())
+        !self.enabled.get()
+            || self.amount.with(|amount| amount.is_some())
+                && self.date.with(|date| date.is_some())
+                && AddPaymentData::is_valid_static(&self.name.get(), &self.users.get())
     }
 
     pub fn is_valid_untracked(&self) -> bool {
-        self.amount.with_untracked(|amount| amount.is_some())
-            && self.date.with_untracked(|date| date.is_some())
-            && AddPaymentData::is_valid_static(
-                &self.name.get_untracked(),
-                &self.users.get_untracked(),
-            )
+        !self.enabled.get()
+            || self.amount.with_untracked(|amount| amount.is_some())
+                && self.date.with_untracked(|date| date.is_some())
+                && AddPaymentData::is_valid_static(
+                    &self.name.get_untracked(),
+                    &self.users.get_untracked(),
+                )
     }
 
     pub fn from_tink_payment(
@@ -69,7 +74,7 @@ impl EditPayment {
         };
 
         Self {
-            enabled: RwSignal::new(true), // TODO: Add status to [TinkPayment] and base enabled on the status or the added status
+            enabled: RwSignal::new(payment.status == TinkPaymentStatus::New),
             name: RwSignal::new(
                 rule.as_ref()
                     .map(|rule| rule.name.clone())
@@ -94,9 +99,7 @@ impl EditPayment {
         CalculatedAmount::calculate(
             self.amount.get().unwrap_or_default(),
             true,
-            self
-                .users
-                .with(|users| users.contains(&me)),
+            self.users.with(|users| users.contains(&me)),
             self.users.with(|users| users.len()),
         )
     }
@@ -106,7 +109,6 @@ pub enum EditPaymentError {
     Disabled,
     InvalidAmount,
     InvalidDate,
-    
 }
 
 impl TryFrom<&EditPayment> for AddPaymentData {
@@ -119,15 +121,20 @@ impl TryFrom<&EditPayment> for AddPaymentData {
 
         Ok(Self {
             name: value.name.get_untracked(),
-            amount: value.amount.get_untracked().ok_or(EditPaymentError::InvalidAmount)?,
-            timestamp: value.date.get_untracked().ok_or(EditPaymentError::InvalidAmount)?,
+            amount: value
+                .amount
+                .get_untracked()
+                .ok_or(EditPaymentError::InvalidAmount)?,
+            timestamp: value
+                .date
+                .get_untracked()
+                .ok_or(EditPaymentError::InvalidAmount)?,
             users: value.users.get_untracked(),
             categories: value.categories.get_untracked(),
-            tink: value.import_data.as_ref().map(|data| AddTinkPayment {
+            tink: value.import_data.as_ref().map(|data| TinkPaymentData {
                 name: data.tink.name.clone(),
                 amount: data.tink.amount,
                 timestamp: data.tink.timestamp,
-                hash: data.tink.hash.clone(),
             }),
         })
     }

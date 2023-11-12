@@ -14,7 +14,7 @@ pub fn IconField<S: SignalSet<Value = String> + SignalGet<Value = String> + Copy
                 on:input=move |ev| signal.set(event_target_value(&ev))
             />
             <a href="https://fontawesome.com/search?o=r&m=free&s=solid" target="_blank" rel="noreferrer noopener">
-                <Icon icon=Icons::OpenLink/>
+                {Icons::OpenLink}
             </a>
         </div>
         <div class="col center">

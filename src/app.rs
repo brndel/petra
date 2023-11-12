@@ -4,7 +4,7 @@ use leptos_router::{Route, Router, Routes, A};
 
 use crate::{
     component::{
-        icon::{Icon, Icons},
+        icon::Icons,
         loading::Loading,
         user::UserView,
     },
@@ -35,12 +35,12 @@ pub fn App() -> impl IntoView {
         <Router>
         <header>
                 <nav class="row center">
-                <A class="card row center" href="/"> <Icon icon=Icons::Home/> "Petra"</A>
+                <A class="card row center" href="/"> {Icons::Home} "Petra"</A>
                 <div class="spacer"/>
-                <A class="card row center" href="/rule"> <Icon icon=Icons::Rule/> "Regeln"</A>
-                <A class="card row center" href="/category"> <Icon icon=Icons::Category/> "Kategorien"</A>
-                <A class="card row center" href="/payment"> <Icon icon=Icons::Payment/> "Zahlungen"</A>
-                <A class="card row center" href="/add"> <Icon icon=Icons::AddPayment/> "Eintragen"</A>
+                <A class="card row center" href="/rule"> {Icons::Rule} "Regeln"</A>
+                <A class="card row center" href="/category"> {Icons::Category} "Kategorien"</A>
+                <A class="card row center" href="/payment"> {Icons::Payment} "Zahlungen"</A>
+                <A class="card row center" href="/add"> {Icons::AddPayment} "Eintragen"</A>
                 <Suspense fallback=||view!{<Loading/>}>
                     {|| {
                         let me = Provider::<Me>::expect().get_single();

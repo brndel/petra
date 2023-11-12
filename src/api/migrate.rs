@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::Path};
+use std::{collections::{HashMap, HashSet}, path::Path};
 
 use chrono::DateTime;
 use mensula::{query::SelectQuery, Database, Table};
@@ -7,10 +7,10 @@ use mensula_key::Key;
 use crate::{
     api::{
         category::server::{insert_category, insert_category_group},
-        payment::{server::add_payment, AddPaymentData},
+        payment::{server::insert_payment, AddPaymentData},
         rule::ShareRule,
         rule::server::insert_rule,
-        tink::AddTinkPayment,
+        tink::TinkPaymentData,
         user::server::User as NewUser,
     },
     db,
@@ -21,8 +21,8 @@ pub fn migrate<T: AsRef<Path>>(old_file: T) {
 
     let user_map = migrate_users(old_db);
     let category_map = migrate_categories(old_db);
-    let tink_payment_map = get_tink_payments(old_db);
-    let _payment_map = migrate_payments(old_db, &user_map, &category_map, &tink_payment_map);
+    let tink_payment_set = get_tink_payments(old_db);
+    let _payment_map = migrate_payments(old_db, &user_map, &category_map, &tink_payment_set);
     let _rule_map = migrate_rules(old_db, &category_map);
 }
 
@@ -156,13 +156,13 @@ struct OldTinkPayment {
     tink_transaction_hash: String,
 }
 
-fn get_tink_payments(old_db: &mut Database) -> HashMap<i64, String> {
+fn get_tink_payments(old_db: &mut Database) -> HashSet<i64> {
     old_db.register::<OldTinkPayment>().unwrap();
 
-    let mut map = HashMap::new();
+    let mut map = HashSet::new();
 
     for payment in old_db.get_all::<OldTinkPayment>().unwrap() {
-        map.insert(payment.payment_id, payment.tink_transaction_hash);
+        map.insert(payment.payment_id);
     }
 
     map
@@ -172,7 +172,7 @@ fn migrate_payments(
     old_db: &mut Database,
     user_map: &HashMap<i64, Key>,
     category_map: &HashMap<i64, Key>,
-    tink_payment_map: &HashMap<i64, String>,
+    tink_payment_set: &HashSet<i64>,
 ) -> HashMap<i64, Key> {
     println!("migrating payments");
     old_db.register::<OldPayment>().unwrap();
@@ -203,16 +203,16 @@ fn migrate_payments(
             .map(|user| user_map[&user.user_id].clone())
             .collect();
 
-        let tink = tink_payment_map
+        let tink = tink_payment_set
             .get(&old_payment.id)
-            .map(|hash| AddTinkPayment {
-                name: "???".to_owned(),
+            .map(|_| TinkPaymentData {
+                name: "< MIGRATED >".to_owned(),
                 amount: old_payment.amount,
                 timestamp: timestamp.clone(),
-                hash: hash.clone(),
             });
 
-        let id = add_payment(
+        let id = insert_payment(
+            None,
             owner,
             AddPaymentData {
                 name: old_payment.name,

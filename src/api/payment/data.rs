@@ -13,6 +13,7 @@ pub struct Payment {
     pub owner: Key,
     pub users: Vec<Key>,
     pub categories: Vec<Key>,
+    pub imported: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]

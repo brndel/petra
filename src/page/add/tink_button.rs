@@ -7,7 +7,7 @@ use mensula_key::Key;
 use crate::{
     api::{
         rule::Rule,
-        tink::{tink_get_payments, tink_get_token_timeout, TinkPaymentResponse},
+        tink::{tink_get_payments, tink_get_token_timeout},
         user::User,
     },
     component::{
@@ -80,8 +80,6 @@ pub fn TinkButton<S: SignalSet<Value = Vec<EditPayment>> + Copy + 'static>(
                                 Err(_) => (),
                             }}/>
 
-                            <span class="center">"Hier einfach Textsuche benutzen, das Menü ist kaputt"</span>
-
                             <ChoiceField signal=month/>
 
                             {move || match (rule_prov.get_all(), user_prov.get_all_ids(), me_prov.get_single_id()) {
@@ -147,9 +145,7 @@ fn load_tink_payments<
             }
         };
 
-        let new_payments_len = payments.new_payments.len();
         let new_payments = payments
-            .new_payments
             .into_iter()
             .map(|p| EditPayment::from_tink_payment(p, &rules, &users, &me))
             .collect();

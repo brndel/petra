@@ -1,17 +1,24 @@
 use chrono::{DateTime, FixedOffset};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "ssr")]
-use tink_banking::{Transaction, Counterparties};
+use tink_banking::{Counterparties, Transaction};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
 pub struct TinkPayment {
+    pub status: TinkPaymentStatus,
     pub name: String,
     pub raw_name: String,
     pub amount: i64,
     pub timestamp: DateTime<FixedOffset>,
     pub counterparties: Option<TinkCounterparties>,
-    pub hash: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+pub enum TinkPaymentStatus {
+    New,
+    Pending,
+    AlreadyAdded,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
@@ -27,15 +34,27 @@ pub struct TinkCounterparty {
 }
 
 #[cfg(feature = "ssr")]
-impl From<Transaction> for TinkPayment {
-    fn from(value: Transaction) -> Self {
+impl From<(Transaction, TinkPaymentStatus)> for TinkPayment {
+    fn from(value: (Transaction, TinkPaymentStatus)) -> Self {
+        let (
+            Transaction {
+                name,
+                raw_name,
+                date: timestamp,
+                amount,
+                counterparties,
+                ..
+            },
+            status,
+        ) = value;
+
         Self {
-            name: value.name,
-            raw_name: value.raw_name,
-            amount: value.amount,
-            timestamp: value.date,
-            counterparties: value.counterparties.map(Into::into),
-            hash: value.ref_hash,
+            status,
+            name,
+            raw_name,
+            amount,
+            timestamp,
+            counterparties: counterparties.map(Into::into),
         }
     }
 }

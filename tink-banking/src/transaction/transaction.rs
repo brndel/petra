@@ -14,7 +14,6 @@ pub struct Transaction {
     pub date: DateTime<FixedOffset>,
     pub amount: i64,
     pub status: TransactionStatus,
-    pub ref_hash: String,
     pub counterparties: Option<Counterparties>,
 }
 
@@ -105,8 +104,6 @@ impl TryFrom<ApiTransaction> for Transaction {
 
         let status = value.status.parse().map_err(TransactionError::Status)?;
 
-        let ref_hash = sha256::digest(format!("{name}|{raw_name}|{date_str}|{amount}"));
-
         let counterparties = match value.counterparties {
             Some(counterparties) => Some(counterparties.try_into()?),
             None => None,
@@ -118,7 +115,6 @@ impl TryFrom<ApiTransaction> for Transaction {
             date,
             amount,
             status,
-            ref_hash,
             counterparties,
         })
     }

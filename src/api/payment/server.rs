@@ -1,18 +1,17 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 
 use chrono::DateTime;
 use mensula::query::{Ordering, SelectQuery};
 use mensula::{Database, Filter, Table};
 use mensula_key::Key;
 
-use crate::api::{tink::server::add_tink_payment, category::server::Category, user::server::User};
+use crate::api::tink;
+use crate::api::{category::server::Category, tink::server::add_tink_payment, user::server::User};
 use crate::db::get_db;
 use crate::util::calculated_amount::CalculatedAmount;
 use crate::util::month::MonthDate;
 
-use super::api::{
-    Payment as ResponsePayment, PaymentFetchError, PaymentMonthData, AddPaymentData,
-};
+use super::api::{AddPaymentData, Payment as ResponsePayment, PaymentFetchError, PaymentMonthData};
 
 #[derive(Table)]
 pub struct Payment {
@@ -50,12 +49,18 @@ fn to_response_payment(
     payment: Payment,
     db: &Database,
 ) -> Result<ResponsePayment, PaymentFetchError> {
-    let users = db
-        .get_linked::<User, Key, Payment, PaymentUserLink>(payment.id.clone())
+    let users = SelectQuery::<User>::link::<Payment, PaymentUserLink>(payment.id.clone())
+        .order_by(User::name(), Ordering::Ascending)
+        .get_all(&db)
         .ok_or(PaymentFetchError)?;
-    let categories = db
-        .get_linked::<Category, Key, Payment, PaymentCategoryLink>(payment.id.clone())
-        .ok_or(PaymentFetchError)?;
+    let categories =
+        SelectQuery::<Category>::link::<Payment, PaymentCategoryLink>(payment.id.clone())
+            .order_by(Category::name(), Ordering::Ascending)
+            .get_all(&db)
+            .ok_or(PaymentFetchError)?;
+
+    let tink_payment = tink::server::get_payment_data(payment.id.clone(), Some(db));
+
     Ok(ResponsePayment {
         id: payment.id,
         name: payment.name,
@@ -65,6 +70,7 @@ fn to_response_payment(
         owner: payment.owner,
         users,
         categories,
+        imported: tink_payment.is_some(),
     })
 }
 
@@ -74,10 +80,7 @@ fn user_filter(user: &Key) -> Filter<Payment> {
         .or(Payment::id().link::<PaymentUserLink, User>(user.clone()))
 }
 
-pub fn get_payment(
-    user: Key,
-    id: Key
-) -> Result<ResponsePayment, PaymentFetchError> {
+pub fn get_payment(user: Key, id: Key) -> Result<ResponsePayment, PaymentFetchError> {
     let db = get_db();
 
     let payment = db.get::<Payment>(id).ok_or(PaymentFetchError)?;
@@ -129,8 +132,8 @@ pub fn get_months(user: Key) -> Result<Vec<PaymentMonthData>, PaymentFetchError>
     for payment in payments {
         let month: MonthDate = payment.timestamp.parse().map_err(|_| PaymentFetchError)?;
 
-        let users = db
-            .get_linked::<User, Key, Payment, PaymentUserLink>(payment.id)
+        let users = SelectQuery::<User>::link::<Payment, PaymentUserLink>(payment.id)
+            .get_all(&db)
             .ok_or(PaymentFetchError)?;
         let is_owner = payment.owner == user;
         let is_user = users.contains(&user);
@@ -148,17 +151,68 @@ pub fn get_months(user: Key) -> Result<Vec<PaymentMonthData>, PaymentFetchError>
     Ok(months.into_values().rev().collect())
 }
 
-pub fn add_payment(owner: Key, payment: AddPaymentData) -> Option<Key> {
+pub fn calculate_all_amounts() -> Result<HashMap<Key, CalculatedAmount>, PaymentFetchError> {
+    let db = get_db();
+
+    let users = SelectQuery::<User>::new()
+        .get_all::<Key>(&db)
+        .ok_or(PaymentFetchError)?;
+
+    let mut users: HashMap<Key, CalculatedAmount> = HashMap::from_iter(
+        users
+            .into_iter()
+            .map(|user| (user, CalculatedAmount::default())),
+    );
+
+    let payments = SelectQuery::<Payment>::new()
+        .get_all::<Payment>(&db)
+        .ok_or(PaymentFetchError)?;
+
+    for payment in payments {
+        let payment_users = SelectQuery::<User>::link::<Payment, PaymentUserLink>(payment.id)
+            .get_all::<Key>(&db)
+            .ok_or(PaymentFetchError)?;
+        let user_count = payment_users.len();
+
+        let mut owner_added = false;
+
+        for user in payment_users {
+            let is_owner = user == payment.owner;
+            owner_added = owner_added || is_owner;
+
+            users.entry(user).and_modify(|amount| {
+                *amount += CalculatedAmount::calculate(
+                    payment.amount,
+                    is_owner,
+                    true,
+                    user_count,
+                );
+            });
+        }
+
+        if !owner_added {
+            users.entry(payment.owner).and_modify(|amount| {
+                *amount += CalculatedAmount::calculate(payment.amount, true, false, user_count);
+            });
+        }
+    }
+
+    Ok(users)
+}
+
+pub fn insert_payment(id: Option<Key>, owner: Key, payment: AddPaymentData) -> Option<Key> {
     if !payment.is_valid() {
         return None;
     }
 
+    let id = id.unwrap_or_else(Key::new);
+
     let server_payment = Payment {
-        id: Key::new(),
+        id,
         name: payment.name,
         amount: payment.amount,
         timestamp: payment.timestamp.to_rfc3339(),
-        owner,
+        owner: owner.clone(),
     };
 
     let db = get_db();
@@ -184,7 +238,7 @@ pub fn add_payment(owner: Key, payment: AddPaymentData) -> Option<Key> {
     drop(db);
 
     if let Some(tink_payment) = payment.tink {
-        add_tink_payment(payment_id.clone(), tink_payment);
+        add_tink_payment(payment_id.clone(), owner, tink_payment);
     }
 
     Some(payment_id)

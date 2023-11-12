@@ -3,7 +3,7 @@ use leptos::{ServerFnError, server};
 use mensula_key::Key;
 use serde::{Serialize, Deserialize};
 
-use crate::{util::month::MonthDate, api::tink::AddTinkPayment};
+use crate::{util::{month::MonthDate, calculated_amount::CalculatedAmount}, api::tink::TinkPaymentData};
 
 pub use super::data::*;
 
@@ -40,7 +40,7 @@ pub struct AddPaymentData {
     pub timestamp: DateTime<FixedOffset>,
     pub users: Vec<Key>,
     pub categories: Vec<Key>,
-    pub tink: Option<AddTinkPayment>,
+    pub tink: Option<TinkPaymentData>,
 }
 
 impl AddPaymentData {
@@ -58,7 +58,7 @@ pub async fn add_payments(payments: Vec<AddPaymentData>) -> Result<(), ServerFnE
     let user = crate::auth::get_user().await?;
 
     for payment in payments {
-        server::add_payment(user.clone(), payment);
+        server::insert_payment(None, user.clone(), payment);
     }
 
     Ok(())
@@ -69,4 +69,26 @@ pub async fn get_payment(id: Key) -> Result<Payment, ServerFnError> {
     let user = crate::auth::get_user().await?;
 
     server::get_payment(user, id).map_err(Into::into)
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct AmountResult {
+    pub own: CalculatedAmount,
+    pub others: Vec<(Key, CalculatedAmount)>,
+}
+
+#[server]
+pub async fn calculate_all_amounts() -> Result<AmountResult, ServerFnError> {
+    let user = crate::auth::get_user().await?;
+
+    let mut amounts = server::calculate_all_amounts().map_err(ServerFnError::from)?;
+
+    let (_, own_amount) = amounts.remove_entry(&user).ok_or_else(|| ServerFnError::from(PaymentFetchError))?;
+
+    let others = amounts.into_iter().map(|(user, mut amount)| {
+        amount.user_amount = 0;
+        (user, amount)
+    }).collect::<Vec<_>>();
+
+    Ok(AmountResult { own: own_amount, others })
 }

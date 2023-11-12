@@ -153,3 +153,15 @@ pub fn insert_category_group(
         })
         .ok_or(CategoryAddError)
 }
+
+pub fn delete_category_group(
+    id: Key
+) -> bool {
+    get_db().delete::<CategoryGroup>(id).is_ok()
+}
+
+pub fn delete_category(
+    id: Key
+) -> bool {
+    get_db().delete::<Category>(id).is_ok()
+}

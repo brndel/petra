@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 
 use crate::api::payment::Payment;
 
-#[derive(Serialize, Deserialize, Default, Clone)]
+#[derive(Serialize, Deserialize, Default, Clone, Debug)]
 pub struct CalculatedAmount {
     /// The amount the user really paid
     pub user_amount: i64,

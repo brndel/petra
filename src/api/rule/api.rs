@@ -52,3 +52,14 @@ pub async fn update_rule(
 ) -> Result<Key, ServerFnError> {
     server::insert_rule(Some(id), name, shared, keywords, categories).map_err(Into::into)
 }
+
+#[server]
+pub async fn delete_rule(
+    id: Key
+) -> Result<(), ServerFnError> {
+    if server::delete_rule(id) {
+        Ok(())
+    } else {
+        Err(ServerFnError::ServerError("Could not delete".to_string()))
+    }
+}

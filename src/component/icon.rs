@@ -52,6 +52,9 @@ pub enum Icons {
     Home,
     Valid,
     Error,
+    Imported,
+    Add,
+    Delete,
 }
 
 impl AsRef<str> for Icons {
@@ -73,6 +76,17 @@ impl AsRef<str> for Icons {
             Icons::Home => "house",
             Icons::Valid => "check",
             Icons::Error => "xmark",
+            Icons::Imported => "cloud-arrow-down",
+            Icons::Add => "add",
+            Icons::Delete => "trash-can",
+        }
+    }
+}
+
+impl IntoView for Icons {
+    fn into_view(self) -> View {
+        view! {
+            <Icon icon=self/>
         }
     }
 }

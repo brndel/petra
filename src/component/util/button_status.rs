@@ -1,6 +1,6 @@
 use leptos::*;
 
-use crate::component::{loading::Loading, icon::{Icon, Icons}};
+use crate::component::{loading::Loading, icon::Icons};
 
 
 
@@ -26,8 +26,8 @@ impl ButtonStatus {
         match self {
             ButtonStatus::Default => default.into_view(),
             ButtonStatus::Loading => view! {<Loading/>}.into_view(),
-            ButtonStatus::Done => view! {<Icon icon=Icons::Valid/>}.into_view(),
-            ButtonStatus::Error => view! {<Icon icon=Icons::Error/>}.into_view(),
+            ButtonStatus::Done => Icons::Valid.into_view(),
+            ButtonStatus::Error => Icons::Error.into_view(),
         }
     }
 }

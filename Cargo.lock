@@ -2651,7 +2651,6 @@ dependencies = [
  "minreq",
  "serde",
  "serde_json",
- "sha256",
  "toml 0.7.8",
 ]
 

@@ -1,9 +1,9 @@
-use leptos::{*, logging::log};
+use leptos::*;
 use leptos_router::A;
 
 use crate::{
     api::{payment::Payment, category::Category, user::User},
-    component::{amount::Amount, category::CategoryView, user::UserView},
+    component::{amount::Amount, category::CategoryView, user::UserView, icon::Icons},
     util::{lang::Translate, calculated_amount::CalculatedAmount}, provider::{Provider, Me},
 };
 
@@ -24,12 +24,17 @@ pub fn PaymentView(payment: Payment) -> impl IntoView {
         {move ||
             match (me(), owner(), categories()) {
                 (Some(me), Some(owner), Some(categories)) => Some({
+                    let amount = CalculatedAmount::new(&me.id, &payment);
                     let name = payment.name.clone();
+                    let id = payment.id.clone();
                     view! {
-                        <div class="card payment">
+                        <A href={format!("?payment={}", id)} class="card payment">
                             <div class="row center space">
-                                <A href={format!("?selected={}", payment.id.as_ref())}>{name}</A>
-                                <Amount amount={CalculatedAmount::new(&me.id, &payment).calculated_amount()} />
+                                <span class="bold">
+                                    {if payment.imported {Some(Icons::Imported)} else {None}}
+                                    {name}
+                                </span>
+                                <Amount amount={amount.calculated_amount()} />
                             </div>
         
                             <div class="row center space">
@@ -42,14 +47,21 @@ pub fn PaymentView(payment: Payment) -> impl IntoView {
                                     </div>
                                 </div>
         
-                                <UserView user={&owner} />
-        
+                                <div class="row center">
+                                    {if amount.repay_amount != 0 {
+                                        Some(Icons::Repay)
+                                    } else {
+                                        None
+                                    }
+                                    } 
+                                    <UserView user={&owner} />
+                                </div>
                             </div>
         
-                        </div>
+                        </A>
                     }
                 }),
-                _ => {log!("None");None},
+                _ => None,
             }
         }
     }

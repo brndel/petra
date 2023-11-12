@@ -85,3 +85,27 @@ pub async fn update_category_group(
 ) -> Result<Key, ServerFnError> {
     server::insert_category_group(Some(id), name, icon).map_err(Into::into)
 }
+
+// Delete
+
+#[server]
+pub async fn delete_category(
+    id: Key
+) -> Result<(), ServerFnError> {
+    if server::delete_category(id) {
+        Ok(())
+    } else {
+        Err(ServerFnError::ServerError("Could not delete".to_string()))
+    }
+}
+
+#[server]
+pub async fn delete_category_group(
+    id: Key
+) -> Result<(), ServerFnError> {
+    if server::delete_category_group(id) {
+        Ok(())
+    } else {
+        Err(ServerFnError::ServerError("Could not delete".to_string()))
+    }
+}

@@ -3,10 +3,10 @@ use leptos::*;
 use crate::api::user::User;
 
 #[component]
-pub fn UserView<'a>(user: &'a User) -> impl IntoView {
+pub fn UserView<'a>(user: &'a User, #[prop(optional)] big: bool) -> impl IntoView {
     let color = get_color(&user.name);
     view! {
-        <div class="user-profile" style={format!("background-color: {color};")}>
+        <div class="user-profile" class:big=big style={format!("background-color: {color};")}>
             <span>{user.name.clone()}</span>
         </div>
     }

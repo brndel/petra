@@ -127,7 +127,7 @@ fn Menu<
             }>
                 {name}
                 <div class="spacer"/>
-                <Icon icon=Icons::ExpandArrow/>
+                {Icons::ExpandArrow}
             </button>
 
             {move || {if open.get() {Some(view!{

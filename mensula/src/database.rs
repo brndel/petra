@@ -7,7 +7,7 @@ use sqlite::{Connection, Statement};
 use crate::meta::{Difference, Meta};
 use crate::query::{CreateTableQuery, DeleteQuery, InsertQuery, SelectQuery};
 use crate::table::{Insertable, Readable};
-use crate::{Key, Link, Table};
+use crate::{Key, Table};
 
 pub struct Database {
     connection: Connection,
@@ -113,15 +113,6 @@ impl Database {
         SelectQuery::new()
             .filter(T::primary_column().eq(key))
             .get_first(self)
-    }
-
-    pub fn get_linked<T: Table + Readable<R>, R, U: Table, L: Link<T> + Link<U> + Table>(
-        &self,
-        key: Key,
-    ) -> Option<Vec<R>> {
-        SelectQuery::new()
-            .filter(T::primary_column().link::<L, U>(key))
-            .get_all(self)
     }
 
     pub fn delete<T: Table>(&self, id: Key) -> sqlite::Result<()> {

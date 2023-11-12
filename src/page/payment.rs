@@ -13,7 +13,7 @@ use crate::{
     component::{
         amount::Amount,
         category::CategoryView,
-        icon::{Icon, Icons},
+        icon::Icons,
         payment::PaymentView,
         response_builder::ResponseBuilder,
         user::UserView,
@@ -115,7 +115,7 @@ async fn fetch_payment(id: Option<String>) -> Result<Option<Payment>, ServerFnEr
 fn PaymentDetails() -> impl IntoView {
     let query = use_query_map();
 
-    let payment_id = move || query.with(|query| query.get("selected").cloned());
+    let payment_id = move || query.with(|query| query.get("payment").cloned());
 
     let payment = create_resource(payment_id, move |id| fetch_payment(id));
 
@@ -151,7 +151,11 @@ fn PaymentDetailsInner(payment: Payment) -> impl IntoView {
         {move || match (me(), owner(), amounts(), categories()) {
             (Some(me), Some(owner), Some(amounts), Some(categories)) => Some(view! {
                 <span class="bold center">
+                    {if payment.imported {Some(Icons::Imported)} else {None}}
                     {payment.name.clone()}
+                </span>
+                <span class="center">
+                    {payment.timestamp.clone().translate_default()}
                 </span>
 
                 <div class="divider"/>
@@ -163,16 +167,18 @@ fn PaymentDetailsInner(payment: Payment) -> impl IntoView {
                         None
                     } else {
                         Some(view! {
-                            <div class="divider"/>
+                            {Icons::Repay}
+                            <div class="row">
                             {
                                 amounts.into_iter().map(
                                     |(user, amount)| {
                                         view! {
-                                            <UserAmountCard user=&user amount=amount.repay_amount repay=true/>
+                                            <UserRepayCard user=&user amount=amount.repay_amount/>
                                         }
                                     }
                                 ).collect_view()
                             }
+                            </div>
                         })
                     }
                 }
@@ -210,7 +216,17 @@ fn UserAmountCard<'a>(user: &'a User, amount: i64, #[prop(optional)] repay: bool
     view! {
         <div class="card row center space self-stretch">
             <UserView user=&user/>
-            {if repay { Some(view!{<Icon icon=Icons::Repay/>}) } else { None }}
+            {if repay { Some(Icons::Repay) } else { None }}
+            <Amount amount/>
+        </div>
+    }
+}
+
+#[component]
+fn UserRepayCard<'a>(user: &'a User, amount: i64) -> impl IntoView {
+    view! {
+        <div class="card col center">
+            <UserView user=&user/>
             <Amount amount/>
         </div>
     }

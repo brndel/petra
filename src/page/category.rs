@@ -4,8 +4,8 @@ use mensula_key::Key;
 
 use crate::{
     api::category::{
-        get_categories_in_group, get_category, get_category_group, update_category,
-        update_category_group, Category, CategoryGroup,
+        delete_category, delete_category_group, get_categories_in_group, get_category,
+        get_category_group, update_category, update_category_group, Category, CategoryGroup, add_category_group, add_category,
     },
     component::{
         field::{
@@ -36,14 +36,19 @@ pub fn CategoryPage() -> impl IntoView {
     let group_prov = Provider::<CategoryGroup>::expect();
 
     view! {
-        <div class="side left col load-anim">
-            <ResponseBuilder res={group_prov.resource()} builder={
-                |(category_groups, _)|
-                category_groups.into_iter().map(|group| view! {<CategoryGroupButton group />}).collect_view()} />
-        </div>
+            <div class="side left col load-anim">
+                <ResponseBuilder res={group_prov.resource()} builder={
+                    |(category_groups, _)| view! {
+                        {
+                            category_groups.into_iter().map(|group| view! {<CategoryGroupButton group />}).collect_view()
+                        }
+                        <div class="spacer"/>
+                        <A class="card" href="new">"New"</A>
+                    }} />
+            </div>
 
-        <Outlet/>
-    }
+            <Outlet/>
+        }
 }
 
 #[component]
@@ -93,13 +98,17 @@ pub fn CategoryPageMain() -> impl IntoView {
                     </h2>
                 }
             }/>
-            <ResponseBuilder res=categories builder=|(categories, _)| {
-                categories.into_iter().map(|category| view! {
-                    <A href={format!("?selected={}", category.id.as_ref())} class="card row center">
-                        <Icon icon={category.icon}/>
-                        <span>{category.name}</span>
-                    </A>
-                }).collect_view()
+            <ResponseBuilder res=categories builder=|(categories, _)| view! {
+                {
+                    categories.into_iter().map(|category| view! {
+                        <A href={format!("?category={}", category.id.as_ref())} class="card row center">
+                            <Icon icon={category.icon}/>
+                            <span>{category.name}</span>
+                        </A>
+                    }).collect_view()
+                }
+                <div class="spacer"/>
+                <A class="card" href="?category=new">"New"</A>
             }/>
         </main>
 
@@ -109,8 +118,8 @@ pub fn CategoryPageMain() -> impl IntoView {
 
 #[derive(Clone)]
 enum Details {
-    Category(Category),
-    Group(CategoryGroup),
+    Category(Result<Category, Key>), // Abusing Result here
+    Group(Option<CategoryGroup>),
 }
 
 #[component]
@@ -121,20 +130,39 @@ fn CategoryDetails() -> impl IntoView {
     let reload_signal = ReloadSignal::new();
     let reload = move || reload_signal.reload();
 
+    let category = move || query.with(|query| query.get("category").cloned());
+    let group = move || params.with(|params| params.get("group").cloned());
+
     let details = create_local_resource(
-        move || (reload_signal.get(), query.get(), params.get()),
-        |(_, query, params)| async move {
-            if let Some(category) = query.get("selected") {
-                let category = get_category(category.clone().into()).await;
+        move || (reload_signal.get(), category(), group()),
+        |(_, category, group)| async move {
 
-                category.map(Details::Category).map(Some)
-            } else if let Some(group) = params.get("group") {
-                let group = get_category_group(group.clone().into()).await;
+            let category = category.as_ref().map(String::as_str);
+            let group = group.as_ref().map(String::as_str);
 
-                group.map(Details::Group).map(Some)
-            } else {
-                Ok(None)
-            }
+            let details = match (category, group) {
+                (Some("new"), Some(group)) => {
+                    Details::Category(Err(Key::from(group.to_string())))
+                },
+                (Some(category), _) => {
+                    let category = get_category(Key::from(category.to_string())).await?;
+
+                    Details::Category(Ok(category))
+                },
+                (_, Some("new")) => {
+                    Details::Group(None)
+                },
+                (_, Some(group)) => {
+                    let group = get_category_group(Key::from(group.to_string())).await?;
+
+                    Details::Group(Some(group))
+                },
+                _ => {
+                    return Ok(None);
+                }
+            };
+
+            Ok(Some(details))
         },
     );
 
@@ -146,9 +174,14 @@ fn CategoryDetails() -> impl IntoView {
                         let reload_signal = expect_context::<CategoryReload>().0;
                         let reload = reload_signal.subscribe(reload);
 
-                        let name = Field::new(&category.name);
-                        let icon = Field::new(&category.icon);
-                        let group = Field::new(&category.group);
+                        let id = category.as_ref().ok().map(|category| RwSignal::new(category.id.clone()));
+                        let name = Field::new(category.as_ref().map(|c| c.name.clone()).unwrap_or_default());
+                        let icon = Field::new(category.as_ref().map(|c| c.icon.clone()).unwrap_or_default());
+                        let group = match &category {
+                            Ok(category) => category.group.clone(),
+                            Err(group) => group.clone(),
+                        };
+                        let group = Field::new(group);
 
                         view! {
                             <TextField signal=name/>
@@ -158,18 +191,38 @@ fn CategoryDetails() -> impl IntoView {
                             <div class="spacer"/>
 
                             <SubmitField
+                                is_new=category.is_err()
                                 field=(name, icon, group)
                                 on_submit=move || {
-                                    let id = category.id.clone();
                                     spawn_local(async move {
-                                        let result = update_category(
-                                            id,
-                                            name.get_untracked(),
-                                            icon.get_untracked(),
-                                            group.get_untracked().into()
-                                        ).await;
+                                        let result;
+                                        if let Some(id) = id {
+                                            result = update_category(
+                                                id.get_untracked(),
+                                                name.get_untracked(),
+                                                icon.get_untracked(),
+                                                group.get_untracked()
+                                            ).await;
+                                        } else {
+                                            result = add_category(
+                                                name.get_untracked(),
+                                                icon.get_untracked(),
+                                                group.get_untracked()
+                                            ).await;
+                                        }
                                         if result.is_ok() {
                                             reload();
+                                        }
+                                    });
+                                }
+                                on_delete=move || {
+                                    spawn_local(async move {
+                                        if let Some(id) = id {
+                                            let id = id.get_untracked();
+                                            let result = delete_category(id).await;
+                                            if result.is_ok() {
+                                                reload();
+                                            }
                                         }
                                     });
                                 }
@@ -180,8 +233,12 @@ fn CategoryDetails() -> impl IntoView {
                         let reload_signal = expect_context::<CategoryGroupReload>().0;
                         let reload = reload_signal.subscribe(reload);
 
-                        let name = Field::new(&group.name);
-                        let icon = Field::new(&group.icon);
+                        let name = group.as_ref().map(|group| group.name.clone()).unwrap_or_default();
+                        let icon = group.as_ref().map(|group| group.icon.clone()).unwrap_or_default();
+
+                        let id = group.as_ref().map(|group| RwSignal::new(group.id.clone()));
+                        let name = Field::new(name);
+                        let icon = Field::new(icon);
 
                         view! {
                             <TextField signal=name/>
@@ -190,17 +247,35 @@ fn CategoryDetails() -> impl IntoView {
                             <div class="spacer"/>
 
                             <SubmitField
+                                is_new=group.is_none()
                                 field=(name, icon)
                                 on_submit=move || {
-                                    let id = group.id.clone();
                                     spawn_local(async move {
-                                        let result = update_category_group(
-                                            id,
-                                            name.get_untracked(),
-                                            icon.get_untracked()
-                                        ).await;
+                                        let result;
+                                        if let Some(id) = id {
+                                            result = update_category_group(
+                                                id.get_untracked(),
+                                                name.get_untracked(),
+                                                icon.get_untracked()
+                                            ).await;
+                                        } else {
+                                            result = add_category_group(
+                                                name.get_untracked(),
+                                                icon.get_untracked(),
+                                            ).await;
+                                        }
                                         if result.is_ok() {
                                             reload();
+                                        }
+                                    });
+                                }
+                                on_delete=move || {
+                                    spawn_local(async move {
+                                        if let Some(id) = id {
+                                            let result = delete_category_group(id.get_untracked()).await;
+                                            if result.is_ok() {
+                                                reload();
+                                            }
                                         }
                                     });
                                 }
