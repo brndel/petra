@@ -1,4 +1,5 @@
 /target
 /old-data
-data*.sqlite
-tink.secret
+*.sqlite
+*.meta.toml
+tink.toml

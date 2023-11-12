@@ -1,73 +1,110 @@
-mod config;
-mod error;
-mod foo_data;
-mod migrate;
-mod request;
-mod tables;
-mod util;
-mod web;
+use petra::api;
+use petra::app;
+use petra::auth;
+use petra::db;
+use petra::cli;
 
-use clap::Parser;
-use config::{ServerConfig, PetraArgs};
-pub use error::Error;
+#[cfg(feature = "ssr")]
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    use clap::Parser;
+    use crate::cli::CliArgs;
 
-pub use request::Request;
+    let args = CliArgs::parse();
 
-use data::Database;
-use tables::{
-    category::Category, payment::Payment, payment::PaymentCategoryLink, payment::PaymentUserLink,
-    user::User,
-};
-use web_server::HttpServer;
+    db::init("debug.sqlite");
+    tink_banking::load_config_from_file("tink.toml");
 
-use crate::{
-    tables::{
-        category::CategoryGroup,
-        rule::{Rule, RuleCategoryLink, RuleKeyword},
-        tink_token::{TinkPayment, TinkToken},
-    },
-    web::tink_secret::load_tink_secrets,
-};
-
-fn main() {
-    let config = PetraArgs::parse();
-
-    println!("{:?}", config);
-
-    start_server(&config.into());
+    if let Some(command) = args.command {
+        command.run()
+    } else {
+        start_server().await
+    }
 }
 
-fn start_server(config: &ServerConfig) {
-    println!("starting server with config {:?}", config);
-    let port = config.port;
+#[cfg(feature = "ssr")]
+async fn start_server() -> std::io::Result<()> {
+    use actix_files::Files;
+    use actix_web::*;
+    use actix_web_httpauth::middleware::HttpAuthentication;
+    use app::App;
+    use leptos::*;
+    use leptos_actix::{generate_route_list, LeptosRoutes};
 
-    let database = open_database(config);
+    use crate::api::tink::token_callback;
 
-    load_tink_secrets(&config.tink_secret_path);
-    // migrate::migrate(&database);
+    let conf = get_configuration(None).await.unwrap();
+    let addr = conf.leptos_options.site_addr;
 
-    let server = HttpServer::new().not_found(Box::new(move |req, _| {
-        web::handle(req, &database).unwrap_or_else(|e| e.into())
-    }));
+    // Generate the list of routes in your Leptos App
+    let routes = generate_route_list(App);
 
-    println!("starting server on http://localhost:{}", port);
-    server.launch(port as i32);
+    println!("starting server at 'http://{}'", addr);
+
+    // dbg!(
+    //     GetPayments::prefix(),
+    //     GetPayments::url(),
+    //     TinkCallback::prefix(),
+    //     TinkCallback::url()
+    // );
+
+    HttpServer::new(move || {
+        let leptos_options = &conf.leptos_options;
+        let site_root = &leptos_options.site_root;
+
+        let auth = HttpAuthentication::basic(auth::authenticate_user);
+
+        App::new()
+            .wrap(auth)
+            // special server function
+            .service(token_callback)
+            // server functions
+            .route("/api/{tail:.*}", leptos_actix::handle_server_fns())
+            // serve JS/WASM/CSS from `pkg`
+            .service(Files::new("/pkg", format!("{site_root}/pkg")))
+            // serve other assets from the `assets` directory
+            .service(Files::new("/assets", site_root))
+            // serve the favicon from /favicon.ico
+            .service(favicon)
+            .service(favicon_svg)
+            .leptos_routes(
+                leptos_options.to_owned(),
+                routes.to_owned(),
+                App,
+            )
+            .app_data(web::Data::new(leptos_options.to_owned()))
+        //.wrap(middleware::Compress::default())
+    })
+    .bind(&addr)?
+    .run()
+    .await
 }
 
-fn open_database(config: &ServerConfig) -> Database {
-    let database = Database::open(&config.db_path).unwrap();
+#[cfg(feature = "ssr")]
+#[actix_web::get("favicon.ico")]
+async fn favicon(
+    leptos_options: actix_web::web::Data<leptos::LeptosOptions>,
+) -> actix_web::Result<actix_files::NamedFile> {
+    let leptos_options = leptos_options.into_inner();
+    let site_root = &leptos_options.site_root;
+    Ok(actix_files::NamedFile::open(format!(
+        "{site_root}/favicon.ico"
+    ))?)
+}
 
-    database.create::<User>().unwrap();
-    database.create::<CategoryGroup>().unwrap();
-    database.create::<Category>().unwrap();
-    database.create::<Payment>().unwrap();
-    database.create::<PaymentCategoryLink>().unwrap();
-    database.create::<PaymentUserLink>().unwrap();
-    database.create::<Rule>().unwrap();
-    database.create::<RuleKeyword>().unwrap();
-    database.create::<RuleCategoryLink>().unwrap();
-    database.create::<TinkToken>().unwrap();
-    database.create::<TinkPayment>().unwrap();
+#[cfg(feature = "ssr")]
+#[actix_web::get("favicon.png")]
+async fn favicon_svg(
+    leptos_options: actix_web::web::Data<leptos::LeptosOptions>,
+) -> actix_web::Result<actix_files::NamedFile> {
+    let leptos_options = leptos_options.into_inner();
+    let site_root = &leptos_options.site_root;
+    Ok(actix_files::NamedFile::open(format!(
+        "{site_root}/favicon.png"
+    ))?)
+}
 
-    database
+#[cfg(not(any(feature = "ssr", feature = "hydrate")))]
+pub fn main() {
+    leptos::log!("not running as server and not running in the web. Where the fuck am i?");
 }
