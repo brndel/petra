@@ -12,7 +12,7 @@ async fn main() -> std::io::Result<()> {
 
     let args = CliArgs::parse();
 
-    db::init("debug.sqlite");
+    db::init("data.sqlite");
     tink_banking::load_config_from_file("tink.toml");
 
     if let Some(command) = args.command {
