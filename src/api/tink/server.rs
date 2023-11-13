@@ -169,3 +169,7 @@ pub fn get_payment_data(id: Key, db: Option<&Database>) -> Option<TinkPaymentDat
         })
     })
 }
+
+pub fn get_tink_url() -> String {
+    tink_banking::get_url()
+}

@@ -7,7 +7,7 @@ use mensula_key::Key;
 use crate::{
     api::{
         rule::Rule,
-        tink::{tink_get_payments, tink_get_token_timeout},
+        tink::{tink_get_payments, tink_get_token_timeout, tink_get_url},
         user::User,
     },
     component::{
@@ -23,22 +23,22 @@ use crate::{
 
 use super::EditPayment;
 
-const TINK_URL: &str = "https://link.tink.com/1.0/transactions/connect-accounts/?client_id=54e8e5d65f5e4339ad76321d45c0f990&redirect_uri=http%3A%2F%2Flocalhost%3A8187%2Fapi%2Ftink%2Fcallback&market=DE&locale=de_DE";
-
 #[component]
 pub fn TinkButton<S: SignalSet<Value = Vec<EditPayment>> + Copy + 'static>(
     payments: S,
 ) -> impl IntoView {
-    let tink_timeout = create_local_resource(|| (), |_| tink_get_token_timeout());
+    let tink_data = create_local_resource(|| (), |_| async {
+        Ok((tink_get_url().await?, tink_get_token_timeout().await?))
+    });
     let button_status = RwSignal::new(ButtonStatus::Default);
 
     let rule_prov = Provider::<Rule>::expect();
     let user_prov = Provider::<User>::expect();
     let me_prov = Provider::<Me>::expect();
 
-    let on_start = move || {button_status.set(ButtonStatus::Loading)};
+    let on_start = move || button_status.set(ButtonStatus::Loading);
 
-    let on_error = move || {button_status.set(ButtonStatus::Error)};
+    let on_error = move || button_status.set(ButtonStatus::Error);
 
     let on_response = move |new_payments: Vec<EditPayment>| {
         button_status.set(ButtonStatus::Done);
@@ -49,7 +49,7 @@ pub fn TinkButton<S: SignalSet<Value = Vec<EditPayment>> + Copy + 'static>(
         <div class="card col stretch">
             <h3 class="center">"Tink"</h3>
 
-            <ResponseBuilder res=tink_timeout builder=move |timeout| {
+            <ResponseBuilder res=tink_data builder=move |(url, timeout)| {
                 match timeout {
                     Some(timeout) => {
                         let now = Local::now().fixed_offset();
@@ -109,7 +109,7 @@ pub fn TinkButton<S: SignalSet<Value = Vec<EditPayment>> + Copy + 'static>(
                     },
                     None => view! {
                         <div class="button-bar">
-                            <a class="button primary" href=TINK_URL>"Verbinden"</a>
+                            <a class="button primary" href=url>"Verbinden"</a>
                         </div>
                     }.into_view()
                 }

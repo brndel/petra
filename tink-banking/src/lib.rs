@@ -10,5 +10,6 @@ pub use auth::get_auth_token;
 pub use transaction::*;
 pub use month::TinkMonth;
 pub use auth::AuthToken;
+pub use config::get_url;
 
 static DATE_FORMAT: &str = "%Y-%m-%d";

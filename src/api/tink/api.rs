@@ -38,6 +38,11 @@ pub async fn tink_get_payment_data(id: Key) -> Result<TinkPaymentData, ServerFnE
     server::get_payment_data(id, None).ok_or_else(||ServerFnError::ServerError("Unkown tink payment id".to_string()))
 }
 
+#[server]
+pub async fn tink_get_url() -> Result<String, ServerFnError> {
+    Ok(server::get_tink_url())
+}
+
 #[cfg(feature = "ssr")]
 use actix_web::{HttpRequest, HttpResponse};
 

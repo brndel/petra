@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct TinkConfig {
     pub id: String,
     pub secret: String,
+    pub url: String,
 }
 
 static CONFIG: Mutex<Option<TinkConfig>> = Mutex::new(None);
@@ -32,12 +33,17 @@ pub fn load_config_from_env() {
 
     let id = env::var("TINK_ID").expect("'TINK_ID' not found in env");
     let secret = env::var("TINK_SECRET").expect("'TINK_SECRET' not found in env");
+    let url = env::var("TINK_URL").expect("'TINK_URL' not found in env");
 
-    *config = Some(TinkConfig { id, secret });
+    *config = Some(TinkConfig { id, secret, url });
 }
 
 pub fn get_config() -> TinkConfig {
     let config = CONFIG.lock().unwrap();
 
     config.as_ref().expect("tink config is not loaded").clone()
+}
+
+pub fn get_url() -> String {
+    get_config().url
 }
