@@ -72,29 +72,29 @@
         {
             checks = { inherit petra petra-clippy };
             packages.default = petra;
-            nixosModules.default = { config, lib, pkgs, ...}:
-                with lib;
-                let cfg = config.brndel.services.petra;
-                in
-                {
-                    options.brndel.services.petra = {
-                        enable = mkEnableOption "Enable petra webserver service";
+            # nixosModules.default = { config, lib, pkgs, ...}:
+            #     with lib;
+            #     let cfg = config.brndel.services.petra;
+            #     in
+            #     {
+            #         options.brndel.services.petra = {
+            #             enable = mkEnableOption "Enable petra webserver service";
 
-                        config = mkIf cfg.enable {
-                            systemd.services.petra = {
-                                description = "Petra service";
-                                wantedBy = [ "multi-user.target" ];
+            #             config = mkIf cfg.enable {
+            #                 systemd.services.petra = {
+            #                     description = "Petra service";
+            #                     wantedBy = [ "multi-user.target" ];
 
-                                serviceConfig = {
-                                    DynamicUser = "yes";
-                                    ExecStart = "${cfg.package}/bin/petra";
-                                    Restart = "on-failure";
-                                    RestartSec = "5s";
-                                }
-                            }
-                        }
-                    }
-                }
+            #                     serviceConfig = {
+            #                         DynamicUser = "yes";
+            #                         ExecStart = "${cfg.package}/bin/petra";
+            #                         Restart = "on-failure";
+            #                         RestartSec = "5s";
+            #                     }
+            #                 }
+            #             }
+            #         }
+            #     }
         }
     )
 }
