@@ -3,3 +3,4 @@
 *.sqlite
 *.meta.toml
 tink.toml
+result
