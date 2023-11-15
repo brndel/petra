@@ -84,7 +84,8 @@
                 installPhaseCommand = ''
                 mkdir -p $out/bin
                 cp target/release/petra $out/bin/
-                cp -r target/site $out/bin
+                mkdir -p $out/bin/target
+                cp -r target/site $out/bin/target
                 '';
                 doCheck = false;
 
