@@ -105,6 +105,7 @@ impl EditPayment {
     }
 }
 
+#[derive(Debug)]
 pub enum EditPaymentError {
     Disabled,
     InvalidAmount,

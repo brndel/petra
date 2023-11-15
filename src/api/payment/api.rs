@@ -38,7 +38,9 @@ pub struct AddPaymentData {
     pub name: String,
     pub amount: i64,
     pub timestamp: DateTime<FixedOffset>,
+    #[serde(default)]
     pub users: Vec<Key>,
+    #[serde(default)]
     pub categories: Vec<Key>,
     pub tink: Option<TinkPaymentData>,
 }

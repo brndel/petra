@@ -17,7 +17,7 @@ use crate::{
     util::calculated_amount::CalculatedAmount,
 };
 
-use self::{edit_payment::EditPayment, tink_button::TinkButton};
+use self::{edit_payment::{EditPayment, EditPaymentError}, tink_button::TinkButton};
 
 #[component]
 pub fn AddPage() -> impl IntoView {
@@ -130,10 +130,12 @@ pub fn AddPage() -> impl IntoView {
                         on:click=move |_| {
                             let res = upload_payments(payments, upload_callback);
 
-                            if res.is_ok() {
-                                upload_status.set(ButtonStatus::Loading);
-                            } else {
-                                upload_status.set(ButtonStatus::Error);
+                            match res {
+                                Ok(_) => upload_status.set(ButtonStatus::Loading),
+                                Err(err) => {
+                                    log!("err {:?}", err);
+                                    upload_status.set(ButtonStatus::Error);
+                                }
                             }
 
                         } >{move || upload_status.get().get_view("Hochladen")}</button>
@@ -151,17 +153,19 @@ fn upload_payments<
 >(
     payments: S,
     upload_callback: F,
-) -> Result<(), ()> {
-    let payments = Option::<Vec<_>>::from_iter(
-        payments
-            .get_untracked()
-            .iter()
-            .map(|payment| payment.try_into().ok()),
-    )
-    .ok_or(())?;
+) -> Result<(), EditPaymentError> {
+    let mut payment_data = Vec::new();
+
+    for payment in payments.get_untracked() {
+        match (&payment).try_into() {
+            Ok(payment) => payment_data.push(payment),
+            Err(EditPaymentError::Disabled) => (),
+            Err(err) => return Err(err),
+        }
+    }
 
     spawn_local(async move {
-        let res = add_payments(payments).await;
+        let res = add_payments(payment_data).await;
 
         upload_callback(res);
     });
