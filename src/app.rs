@@ -13,7 +13,7 @@ use crate::{
         category::{CategoryPage, CategoryPageEmpty, CategoryPageMain},
         home::HomePage,
         payment::{PaymentPage, PaymentPageMain},
-        rule::{RulePage, RulePageDetails},
+        rule::{RulePage, RulePageDetails}, user::UserPage,
     },
     provider::{Me, Provider},
 };
@@ -41,16 +41,18 @@ pub fn App() -> impl IntoView {
                 <A class="card row center" href="/category"> {Icons::Category} "Kategorien"</A>
                 <A class="card row center" href="/payment"> {Icons::Payment} "Zahlungen"</A>
                 <A class="card row center" href="/add"> {Icons::AddPayment} "Eintragen"</A>
-                <Suspense fallback=||view!{<Loading/>}>
-                    {|| {
-                        let me = Provider::<Me>::expect().get_single();
+                <A href="/user">
+                    <Suspense fallback=||view!{<Loading/>}>
+                        {|| {
+                            let me = Provider::<Me>::expect().get_single();
 
-                        match &me {
-                            Some(user) => view!{ <UserView user/> }.into_view(),
-                            None => ().into_view()
-                        }
-                    }}
-                </Suspense>
+                            match &me {
+                                Some(user) => view!{ <UserView user/> }.into_view(),
+                                None => ().into_view()
+                            }
+                        }}
+                    </Suspense>
+                </A>
                 </nav>
             </header>
 
@@ -68,6 +70,9 @@ pub fn App() -> impl IntoView {
                 <Route path="/rule" view=RulePage>
                     <Route path="" view=Empty/>
                     <Route path=":rule" view=RulePageDetails/>
+                </Route>
+
+                <Route path="/user" view=UserPage>
                 </Route>
 
                 <Route path="/*" view=NotFound/>

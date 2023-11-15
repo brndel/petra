@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use crate::db::get_db;
+use leptos::ServerFnError;
 use mensula::{Table, query::SelectQuery};
 use mensula_key::Key;
 
@@ -48,11 +49,20 @@ pub fn get_user_by_name(name: String) -> Option<User> {
         .get_first(&db)
 }
 
+pub fn add_user(name: String, display_name: String, password: String) -> Result<Key, UserCreateError> {
+    let db = get_db();
+
+    let user = User::create(name, display_name, password)?;
+
+    db.insert(user).ok_or(UserCreateError::Database)
+}
+
 #[derive(Debug)]
 pub enum UserCreateError {
     InvalidName,
     InvalidDisplayname,
     InvalidPassword,
+    Database,
 }
 
 impl Display for UserCreateError {
@@ -61,7 +71,14 @@ impl Display for UserCreateError {
             UserCreateError::InvalidName => write!(f, "Username needs to have at least 2 characters and only contain lowercase letters, numbers and underscores"),
             UserCreateError::InvalidDisplayname => write!(f, "Display name needs to have at least 2 characters"),
             UserCreateError::InvalidPassword => write!(f, "Password needs to have at least 8 characters"),
+            UserCreateError::Database => write!(f, "Could not insert user into database"),
         }
+    }
+}
+
+impl From<UserCreateError> for ServerFnError {
+    fn from(value: UserCreateError) -> Self {
+        Self::ServerError(value.to_string())
     }
 }
 

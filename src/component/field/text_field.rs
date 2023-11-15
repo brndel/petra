@@ -8,7 +8,7 @@ pub fn TextField<S: SignalSet<Value = String> + SignalGet<Value = String> + Copy
 ) -> impl IntoView {
     view! {
         <input
-            type="text"
+            type=style.input_type()
             class=style.class()
             placeholder=style.placeholder()
             prop:value=move || signal.get()
@@ -20,7 +20,8 @@ pub fn TextField<S: SignalSet<Value = String> + SignalGet<Value = String> + Copy
 
 pub enum TextFieldStyle {
     Default,
-    Search
+    Search,
+    Password,
 }
 
 impl Default for TextFieldStyle {
@@ -34,6 +35,7 @@ impl TextFieldStyle {
         match self {
             TextFieldStyle::Default => "",
             TextFieldStyle::Search => "margin-small",
+            TextFieldStyle::Password => "",
         }
     }
 
@@ -41,6 +43,14 @@ impl TextFieldStyle {
         match self {
             TextFieldStyle::Default => "",
             TextFieldStyle::Search => "Suche...",
+            TextFieldStyle::Password => "",
+        }
+    }
+
+    fn input_type(&self) -> &'static str {
+        match self {
+            TextFieldStyle::Password => "password",
+            _ => "text",
         }
     }
 }

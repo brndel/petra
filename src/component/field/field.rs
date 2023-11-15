@@ -163,6 +163,18 @@ impl<T: 'static + Clone> SignalWith for Field<T> {
     }
 }
 
+impl<T: 'static + Clone> SignalWithUntracked for Field<T> {
+    type Value = T;
+
+    fn with_untracked<O>(&self, f: impl FnOnce(&Self::Value) -> O) -> O {
+        self.signal.with_untracked(|inner| f(&inner.current_value))
+    }
+
+    fn try_with_untracked<O>(&self, f: impl FnOnce(&Self::Value) -> O) -> Option<O> {
+        self.signal.try_with_untracked(|inner| f(&inner.current_value))
+    }
+}
+
 impl<T: 'static + Clone> SignalUpdate for Field<T> {
     type Value = T;
 
