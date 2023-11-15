@@ -1,19 +1,29 @@
 use petra::api;
 use petra::app;
 use petra::auth;
-use petra::db;
 use petra::cli;
+use petra::db;
 
 #[cfg(feature = "ssr")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    use clap::Parser;
     use crate::cli::CliArgs;
+    use clap::Parser;
 
     let args = CliArgs::parse();
 
-    db::init("data.sqlite");
-    tink_banking::load_config_from_file("tink.toml");
+    db::init(
+        args.db_file
+            .as_ref()
+            .map(String::as_str)
+            .unwrap_or("data.sqlite"),
+    );
+    tink_banking::load_config_from_file(
+        args.tink_file
+            .as_ref()
+            .map(String::as_str)
+            .unwrap_or("tink.toml"),
+    );
 
     if let Some(command) = args.command {
         command.run()
@@ -67,11 +77,7 @@ async fn start_server() -> std::io::Result<()> {
             // serve the favicon from /favicon.ico
             .service(favicon)
             .service(favicon_svg)
-            .leptos_routes(
-                leptos_options.to_owned(),
-                routes.to_owned(),
-                App,
-            )
+            .leptos_routes(leptos_options.to_owned(), routes.to_owned(), App)
             .app_data(web::Data::new(leptos_options.to_owned()))
         //.wrap(middleware::Compress::default())
     })

@@ -5,6 +5,11 @@ use crate::api::migrate;
 #[derive(Debug, clap::Parser)]
 // #[clap(author, version, about)]
 pub struct CliArgs {
+    #[clap(long)]
+    pub db_file: Option<String>,
+    #[clap(long)]
+    pub tink_file: Option<String>,
+
     #[clap(subcommand)]
     pub command: Option<CliCommand>,
 }
