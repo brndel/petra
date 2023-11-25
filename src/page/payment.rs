@@ -18,7 +18,7 @@ use crate::{
         response_builder::ResponseBuilder,
         user::UserView,
     },
-    util::{lang::Translate, month::MonthDate, calculated_amount::CalculatedAmount}, provider::{Provider, Me},
+    util::{lang::Translate, month::MonthDate, calculated_amount::CalculatedAmount}, provider::Provider,
 };
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -135,8 +135,6 @@ fn PaymentDetails() -> impl IntoView {
 
 #[component]
 fn PaymentDetailsInner(payment: Payment) -> impl IntoView {
-    let me = move || Provider::<Me>::expect().get_single();
-
     let user_prov = Provider::<User>::expect();
     let owner = payment.owner.clone();
     let owner = move || user_prov.get(&owner);
@@ -148,8 +146,8 @@ fn PaymentDetailsInner(payment: Payment) -> impl IntoView {
     let categories = move || category_prov.get_multiple(&categories);
 
     view! {
-        {move || match (me(), owner(), amounts(), categories()) {
-            (Some(me), Some(owner), Some(amounts), Some(categories)) => Some(view! {
+        {move || match (owner(), amounts(), categories()) {
+            (Some(owner), Some(amounts), Some(categories)) => Some(view! {
                 <span class="bold center">
                     {if payment.imported {Some(Icons::Imported)} else {None}}
                     {payment.name.clone()}
@@ -163,7 +161,7 @@ fn PaymentDetailsInner(payment: Payment) -> impl IntoView {
                 <UserAmountCard user=&owner amount=payment.amount />
 
                 {
-                    if payment.users.len() == 1 && payment.users[0] == me.id {
+                    if payment.users.len() == 1 && payment.users[0] == payment.owner {
                         None
                     } else {
                         Some(view! {

@@ -1,8 +1,8 @@
 use chrono::{DateTime, FixedOffset};
 use mensula_key::Key;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-use crate::util::{month::MonthDate, calculated_amount::CalculatedAmount};
+use crate::util::{calculated_amount::CalculatedAmount, month::MonthDate};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Payment {
@@ -41,14 +41,24 @@ impl Payment {
     pub fn get_all_amounts(&self) -> Vec<(Key, CalculatedAmount)> {
         let user_count = self.users.len();
 
-        self.users
+        let mut owner_added = false;
+
+        let mut amounts = self.users
             .iter()
             .map(|user| {
-                (
-                    user.clone(),
-                    CalculatedAmount::calculate(self.amount, user == &self.owner, true, user_count),
-                )
+                (user.clone(), {
+                    let is_owner = user == &self.owner;
+                    owner_added = owner_added || is_owner;
+
+                    CalculatedAmount::calculate(self.amount, is_owner, true, user_count)
+                })
             })
-            .collect()
+            .collect::<Vec<_>>();
+
+        if !owner_added {
+            amounts.push((self.owner.clone(), CalculatedAmount::calculate(self.amount, true, false, user_count)));
+        }
+
+        amounts
     }
 }
