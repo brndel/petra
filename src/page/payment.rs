@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use leptos::*;
 use leptos_router::{use_params_map, use_query_map, Outlet, A};
 use mensula_key::Key;
@@ -5,20 +7,20 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     api::{
-        payment::{
-            get_months, get_payment, get_payments, Payment, PaymentMonthData,
-        },
-        user::User, category::Category,
+        category::{Category, CategoryGroup},
+        payment::{get_months, get_payment, get_payments, Payment, PaymentMonthData},
+        user::User,
     },
     component::{
         amount::Amount,
         category::CategoryView,
-        icon::Icons,
+        icon::{Icon, Icons},
         payment::PaymentView,
         response_builder::ResponseBuilder,
         user::UserView,
     },
-    util::{lang::Translate, month::MonthDate, calculated_amount::CalculatedAmount}, provider::Provider,
+    provider::{Me, Provider},
+    util::{calculated_amount::CalculatedAmount, lang::Translate, month::MonthDate},
 };
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -33,6 +35,7 @@ pub fn PaymentPage() -> impl IntoView {
 
     Provider::<User>::provide();
     Provider::<Category>::provide();
+    Provider::<CategoryGroup>::provide();
 
     view! {
         <div class="side left col load-anim">
@@ -92,6 +95,7 @@ pub fn PaymentPageMain() -> impl IntoView {
         <ResponseBuilder res={payments} builder=move |payments| match payments {
             Some((payments, month)) => view! {
                 <h2>{month.translate_default()}</h2>
+                <MonthStatistics payments=&payments/>
                 {
                     payments.into_iter().map(move |payment| view!{<PaymentView payment/>}).collect_view()
                 }
@@ -109,6 +113,66 @@ async fn fetch_payment(id: Option<String>) -> Result<Option<Payment>, ServerFnEr
     };
 
     get_payment(id.into()).await.map(Some)
+}
+
+#[component]
+fn MonthStatistics<'a>(payments: &'a [Payment]) -> impl IntoView {
+    let me_prov = Provider::<Me>::expect();
+    let category_prov = Provider::<Category>::expect();
+    let category_group_prov = Provider::<CategoryGroup>::expect();
+
+    let category_amount_map = || {
+        let me = me_prov.get_single().unwrap();
+        payments
+            .iter()
+            .map(move |payment| (&payment.categories, payment.get_amount(&me.id)))
+            .fold(
+                HashMap::default(),
+                |mut map: HashMap<Key, i64>, (categories, amount)| {
+                    if !categories.is_empty() {
+                        let amount_per_category =
+                            amount.calculated_amount() / (categories.len() as i64);
+
+                        for category in categories {
+                            let amount = map.entry(category.clone()).or_insert(0);
+                            *amount += amount_per_category;
+                        }
+                    }
+
+                    map
+                },
+            )
+    };
+
+    view! {
+        <div class="card row">
+            {
+                let category_map = category_amount_map();
+
+                category_group_prov.get_all().unwrap_or_default().iter().map(move |category_group| {
+                    let categories = category_group.categories.iter().map(|category| (category, category_map.get(&category).map(ToOwned::to_owned).unwrap_or_default()));
+
+                    let sum_amount = categories.clone().fold(0, |sum, (_, amount)| {sum + amount});
+
+                    view! {
+                        <div class="card col spacer">
+                            <div class="row space"><Icon icon={&category_group.icon}/> <span class="bold">{&category_group.name}</span> <Amount amount=sum_amount/></div>
+                            {
+                                categories.map(|(category_id, amount)| {
+                                    let category = category_prov.get(category_id);
+
+                                    view! {
+                                        <span>{category.map(|category| view! {<CategoryView category=&category/>})} <Amount amount/></span>
+                                    }
+                                }).collect_view()
+                            }
+                        </div>
+
+                    }
+                }).collect_view()
+            }
+        </div>
+    }
 }
 
 #[component]
