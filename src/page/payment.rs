@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     api::{
         category::{Category, CategoryGroup},
-        payment::{get_months, get_payment, get_payments, Payment, PaymentMonthData},
+        payment::{get_months, get_payment, get_payments, payment_update_users, Payment, PaymentMonthData},
         user::User,
     },
     component::{
@@ -17,10 +17,11 @@ use crate::{
         icon::{Icon, Icons},
         payment::PaymentView,
         response_builder::ResponseBuilder,
+        select_menu::MultiSelectMenu,
         user::UserView,
     },
     provider::{Me, Provider},
-    util::{calculated_amount::CalculatedAmount, lang::Translate, month::MonthDate},
+    util::{calculated_amount::CalculatedAmount, lang::Translate, month::MonthDate, reload_signal::ReloadSignal},
 };
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -175,13 +176,19 @@ fn MonthStatistics<'a>(payments: &'a [Payment]) -> impl IntoView {
     }
 }
 
+#[derive(Clone)]
+struct PaymentDetailsReload(ReloadSignal);
+
 #[component]
 fn PaymentDetails() -> impl IntoView {
     let query = use_query_map();
 
     let payment_id = move || query.with(|query| query.get("payment").cloned());
 
-    let payment = create_resource(payment_id, move |id| fetch_payment(id));
+    let reload_signal = ReloadSignal::new();
+    provide_context(PaymentDetailsReload(reload_signal));
+
+    let payment = create_resource(move || (payment_id(), reload_signal.get()), move |(id, _)| fetch_payment(id));
 
     view! {
         <div class="side right col center load-anim">
@@ -200,6 +207,8 @@ fn PaymentDetails() -> impl IntoView {
 #[component]
 fn PaymentDetailsInner(payment: Payment) -> impl IntoView {
     let user_prov = Provider::<User>::expect();
+    let me_prov = Provider::<Me>::expect();
+    let me = move || me_prov.get_single();
     let owner = payment.owner.clone();
     let owner = move || user_prov.get(&owner);
     let amounts = payment.get_all_amounts().clone();
@@ -209,9 +218,18 @@ fn PaymentDetailsInner(payment: Payment) -> impl IntoView {
     let categories = payment.categories.clone();
     let categories = move || category_prov.get_multiple(&categories);
 
-    view! {
-        {move || match (owner(), amounts(), categories()) {
-            (Some(owner), Some(amounts), Some(categories)) => Some(view! {
+    let show_edit = create_rw_signal(false);
+    let users_edit = create_rw_signal(payment.users.clone());
+
+    let (payment_id, _) = create_signal(payment.id.clone());
+
+    let reload_signal = expect_context::<PaymentDetailsReload>().0;
+
+    let payment_owner = payment.owner.clone();
+    let is_owner = move || me().map(|user| user.id) == Some(payment_owner.clone());
+
+    move || match (is_owner(), owner(), amounts(), categories()) {
+            (is_owner, Some(owner), Some(amounts), Some(categories)) => Some(view! {
                 <span class="bold center">
                     {if payment.imported {Some(Icons::Imported)} else {None}}
                     {payment.name.clone()}
@@ -253,10 +271,41 @@ fn PaymentDetailsInner(payment: Payment) -> impl IntoView {
                     }).collect_view()
                 }
                 </div>
+
+                {move || (is_owner && !show_edit.get()).then(move || view! {
+                    <button on:click=move |_| show_edit.set(true)>
+                        <Icon icon=Icons::Edit/>
+                    </button>
+                })}
+
+                {move || show_edit.get().then(move || view! {
+                    <div class="row">
+                        {move || {
+                            users_edit.get().into_iter().map(|u| user_prov.get(&u).map(|user| view!{<UserView user=&user/>})).collect_view()
+                        }}
+                    </div>
+
+                    <MultiSelectMenu
+                        name=|| "Users"
+                        signal=users_edit
+                        items={user_prov.get_all().unwrap_or_default()}
+                    />
+
+                    <button class="primary" on:click=move |_| {
+                        spawn_local(async move {
+                            match payment_update_users(payment_id.get_untracked().clone(), users_edit.get_untracked()).await {
+                                Ok(_) => reload_signal.reload(),
+                                _ => println!("error!"),
+                            }
+                        })
+                    }>
+                        "Update"
+                    </button>
+                })}
             }),
             _ => None,
-        }}
     }
+    
 }
 
 fn map_amounts(

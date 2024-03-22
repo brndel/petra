@@ -19,6 +19,15 @@ impl From<PaymentFetchError> for ServerFnError {
     }
 }
 
+
+pub struct PaymentUpdateError;
+
+impl From<PaymentUpdateError> for ServerFnError {
+    fn from(_: PaymentUpdateError) -> Self {
+        Self::ServerError("could not update payment".to_owned())
+    }
+}
+
 #[server]
 pub async fn get_payments(month: MonthDate) -> Result<Vec<Payment>, ServerFnError> {
     let user = crate::auth::get_user().await?;
@@ -71,6 +80,13 @@ pub async fn get_payment(id: Key) -> Result<Payment, ServerFnError> {
     let user = crate::auth::get_user().await?;
 
     server::get_payment(user, id).map_err(Into::into)
+}
+
+#[server]
+pub async fn payment_update_users(id: Key, users: Vec<Key>) -> Result<(), ServerFnError> {
+    let request_user = crate::auth::get_user().await?;
+
+    server::payment_update_users(request_user, id, users).map_err(Into::into)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

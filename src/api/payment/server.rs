@@ -11,7 +11,7 @@ use crate::db::get_db;
 use crate::util::calculated_amount::CalculatedAmount;
 use crate::util::month::MonthDate;
 
-use super::api::{AddPaymentData, Payment as ResponsePayment, PaymentFetchError, PaymentMonthData};
+use super::api::{AddPaymentData, Payment as ResponsePayment, PaymentFetchError, PaymentUpdateError, PaymentMonthData};
 
 #[derive(Table)]
 pub struct Payment {
@@ -242,4 +242,31 @@ pub fn insert_payment(id: Option<Key>, owner: Key, payment: AddPaymentData) -> O
     }
 
     Some(payment_id)
+}
+
+
+pub fn payment_update_users(request_user: Key, payment_id: Key, users: Vec<Key>) -> Result<(), PaymentUpdateError> {
+    let db = get_db();
+
+    let payment = db.get::<Payment>(payment_id.clone()).ok_or(PaymentUpdateError)?;
+
+    if payment.owner != request_user {
+        return Err(PaymentUpdateError);
+    }
+
+    let current_links = SelectQuery::<PaymentUserLink>::new().filter(PaymentUserLink::payment().eq(payment_id.clone())).get_all::<Key>(&db).ok_or(PaymentUpdateError)?;
+
+    for key in current_links {
+        let _ = db.delete::<PaymentUserLink>(key);
+    }
+
+    for user in users {
+        db.insert(PaymentUserLink {
+            id: Key::new(),
+            payment: payment_id.clone(),
+            user,
+        }).ok_or(PaymentUpdateError)?;
+    }
+
+    Ok(())
 }

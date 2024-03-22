@@ -55,6 +55,7 @@ pub enum Icons {
     Imported,
     Add,
     Delete,
+    Edit,
 }
 
 impl AsRef<str> for Icons {
@@ -79,6 +80,7 @@ impl AsRef<str> for Icons {
             Icons::Imported => "cloud-arrow-down",
             Icons::Add => "add",
             Icons::Delete => "trash-can",
+            Icons::Edit => "pen",
         }
     }
 }
